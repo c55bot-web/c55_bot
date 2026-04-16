@@ -1,11 +1,9 @@
-# Публікує лише Mini App (zv_dorm_form.html) на GitHub Pages.
-# У репозиторії: Settings → Pages → Build: GitHub Actions (перший раз вручну).
+# Опційно: публікація через GitHub Actions (якщо у Settings → Pages обрано Source: GitHub Actions).
+# Якщо на сайті немає «GitHub Actions» — використовуйте гілку main + папку /docs (див. scripts/github-pages-miniapp.txt).
 
 name: GitHub Pages — ZV Mini App
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 
 permissions:

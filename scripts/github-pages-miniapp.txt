@@ -1,29 +1,46 @@
 GitHub Pages для Mini App «Зв з гуртожитку»
 ==========================================
 
-Файл для Telegram береться з webapp/zv_dorm_form.html; workflow копіює його
-на Pages (один файл + .nojekyll).
+У репозиторії є ДВА варіанти. Рекомендований — без пункту «GitHub Actions» у Pages.
 
-1) Створіть НОВИЙ публічний репозиторій на github.com (можна лише для бота).
+--------------------------------------------------------------------
+Варіант A (найпростіший): гілка main + папка /docs
+--------------------------------------------------------------------
 
-2) У корені проєкту (c55_bot):
-   git init
-   git add .
-   git commit -m "Initial"
-   git branch -M main
-   git remote add origin https://github.com/<USER>/<REPO>.git
-   git push -u origin main
+Файли вже в репо: docs/zv_dorm_form.html та docs/.nojekyll
+(копія з webapp/ — при зміні форми оновлюйте обидва файли або лише docs/ і push.)
 
-   Переконайтесь, що .env НЕ потрапив у коміт (.gitignore вже є).
+На сайті GitHub:
+1) Відкрийте репозиторій c55bot-web/c55_bot.
+2) Settings (якщо вкладки не видно — натисніть «...» і там Settings; потрібні права власника).
+3) У лівій колонці знайдіть блок «Code and automation» → натисніть «Pages»
+   (інколи «Pages» ховають у меню «Code and automation», не вгорі сторінки).
+4) У розділі «Build and deployment»:
+   - Source / Джерело: оберіть «Deploy from a branch» (не GitHub Actions).
+   - Branch: main
+   - Folder: /docs (не «/ (root)»).
+5) Save / Зберегти.
 
-3) На GitHub: Settings → Pages → Build and deployment → Source: GitHub Actions.
+Через 1–3 хвилини сайт:
+  https://c55bot-web.github.io/c55_bot/zv_dorm_form.html
 
-4) Знову push або Actions → «GitHub Pages — ZV Mini App» → Run workflow.
-   Після зеленого job URL буде:
-   https://<USER>.github.io/<REPO>/zv_dorm_form.html
+На VPS у .env:
+  ZV_DORM_WEBAPP_URL=https://c55bot-web.github.io/c55_bot/zv_dorm_form.html
+Перезапустіть бота.
 
-5) На VPS у .env:
-   ZV_DORM_WEBAPP_URL=https://<USER>.github.io/<REPO>/zv_dorm_form.html
-   Перезапустіть бота.
+--------------------------------------------------------------------
+Варіант B: GitHub Actions
+--------------------------------------------------------------------
 
-6) У @BotFather за потреби додайте домен github.io або підказаний hostname.
+Пункт «Source: GitHub Actions» з’являється не в усіх акаунтах/планах і інколи
+лише після першого push. Якщо знайдете — увімкніть його; workflow
+.github/workflows/gh-pages-zv-miniapp.yml запускається вручну: Actions →
+«GitHub Pages — ZV Mini App» → Run workflow.
+
+--------------------------------------------------------------------
+Push з сервера (якщо ще не пушили)
+--------------------------------------------------------------------
+
+  cd ~/telegram_bot/C55_bot/c55_bot
+  git remote add origin git@github.com:c55bot-web/c55_bot.git
+  git push -u origin main
