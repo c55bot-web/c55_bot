@@ -1,0 +1,29 @@
+GitHub Pages для Mini App «Зв з гуртожитку»
+==========================================
+
+Файл для Telegram береться з webapp/zv_dorm_form.html; workflow копіює його
+на Pages (один файл + .nojekyll).
+
+1) Створіть НОВИЙ публічний репозиторій на github.com (можна лише для бота).
+
+2) У корені проєкту (c55_bot):
+   git init
+   git add .
+   git commit -m "Initial"
+   git branch -M main
+   git remote add origin https://github.com/<USER>/<REPO>.git
+   git push -u origin main
+
+   Переконайтесь, що .env НЕ потрапив у коміт (.gitignore вже є).
+
+3) На GitHub: Settings → Pages → Build and deployment → Source: GitHub Actions.
+
+4) Знову push або Actions → «GitHub Pages — ZV Mini App» → Run workflow.
+   Після зеленого job URL буде:
+   https://<USER>.github.io/<REPO>/zv_dorm_form.html
+
+5) На VPS у .env:
+   ZV_DORM_WEBAPP_URL=https://<USER>.github.io/<REPO>/zv_dorm_form.html
+   Перезапустіть бота.
+
+6) У @BotFather за потреби додайте домен github.io або підказаний hostname.

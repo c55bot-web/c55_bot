@@ -1,0 +1,40 @@
+# Публікує лише Mini App (zv_dorm_form.html) на GitHub Pages.
+# У репозиторії: Settings → Pages → Build: GitHub Actions (перший раз вручну).
+
+name: GitHub Pages — ZV Mini App
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-zv-miniapp
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Зібрати статичний сайт
+        run: |
+          mkdir -p _site
+          cp webapp/zv_dorm_form.html _site/
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

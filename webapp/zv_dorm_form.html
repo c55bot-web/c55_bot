@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Зв з гуртожитку</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 16px; background: #0f172a; color: #e2e8f0; }
+    .card { background: #111827; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+    label { display: block; margin: 8px 0 6px; font-size: 14px; color: #cbd5e1; }
+    input { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid #334155; background: #0b1220; color: #e2e8f0; }
+    button { width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; border: none; font-size: 16px; font-weight: 700; background: #2563eb; color: white; }
+    h2 { margin: 0 0 8px 0; }
+    .hint { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Зв з гуртожитку</h2>
+    <label for="date_from">Дата початку</label>
+    <input id="date_from" type="date" required />
+    <label for="time_from">Час початку</label>
+    <input id="time_from" type="time" required />
+    <label for="date_to">Дата завершення</label>
+    <input id="date_to" type="date" required />
+    <label for="time_to">Час завершення</label>
+    <input id="time_to" type="time" required />
+    <button id="submitBtn">Надіслати</button>
+    <div class="hint">Після натискання дані відправляться в бот.</div>
+  </div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const now = new Date();
+    const toDate = (d) => d.toISOString().slice(0, 10);
+    const toTime = (d) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+    const dateFrom = document.getElementById("date_from");
+    const timeFrom = document.getElementById("time_from");
+    const dateTo = document.getElementById("date_to");
+    const timeTo = document.getElementById("time_to");
+    const submitBtn = document.getElementById("submitBtn");
+
+    dateFrom.value = toDate(now);
+    timeFrom.value = toTime(now);
+    const end = new Date(now.getTime() + 60 * 60 * 1000);
+    dateTo.value = toDate(end);
+    timeTo.value = toTime(end);
+
+    submitBtn.addEventListener("click", () => {
+      if (!dateFrom.value || !timeFrom.value || !dateTo.value || !timeTo.value) {
+        tg.showAlert("Заповніть дату і час початку/завершення.");
+        return;
+      }
+      const data = {
+        kind: "zv_dorm_webapp",
+        date_from: dateFrom.value,
+        time_from: timeFrom.value,
+        date_to: dateTo.value,
+        time_to: timeTo.value
+      };
+      tg.sendData(JSON.stringify(data));
+      tg.close();
+    });
+  </script>
+</body>
+</html>

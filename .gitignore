@@ -1,0 +1,15 @@
+# Секрети та локальне
+.env
+*.pyc
+__pycache__/
+.venv/
+venv/
+*.log
+*.save
+
+# Не публікувати на GitHub
+sne_credentials.json
+c55_data.db
+users_backup.json
+.bin/
+miniconda.sh
