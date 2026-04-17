@@ -5,6 +5,7 @@ tg.expand();
 const LAST_REASON_KEY = "c55_last_zv_reason";
 const drawerWrap = document.getElementById("studentDrawerWrap");
 const toast = document.getElementById("toast");
+const launchMode = new URLSearchParams(window.location.search).get("mode") || "student";
 const now = new Date();
 const toDate = (d) => d.toISOString().slice(0, 10);
 const toTime = (d) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -32,6 +33,12 @@ document.querySelectorAll(".menu button[data-panel]").forEach(btn => {
   btn.onclick = () => openPanel(btn.dataset.panel);
 });
 openPanel("pProfile");
+
+if (launchMode === "student") {
+  drawerWrap.classList.add("open");
+} else if (launchMode === "admin") {
+  showToast("Адмін-панель буде підключена наступним етапом.");
+}
 
 document.getElementById("df").value = toDate(now);
 document.getElementById("tf").value = toTime(now);
