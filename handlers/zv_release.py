@@ -6,7 +6,16 @@ import logging
 from datetime import date, datetime, timedelta
 
 from aiogram import Router, F, Bot
-from aiogram.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from aiogram.types import (
+    CallbackQuery,
+    Message,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    WebAppInfo,
+)
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from core.states import ZvRelease
@@ -172,18 +181,30 @@ async def zv_dorm_start(callback: CallbackQuery, state: FSMContext):
                 "Подайте Зв через кроки нижче або вкажіть у .env HTTPS-адресу (тунель / домен з TLS)."
             ),
         )
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🗓 Відкрити календар Зв", web_app=WebAppInfo(url=url))],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="req_zv_menu")],
-        ]
-    )
     await callback.message.edit_text(
-        "🏠 <b>Зв з гуртожитку</b>\n\nВідкрийте Mini App та оберіть дату/час початку і завершення.",
-        reply_markup=kb,
+        "🏠 <b>Зв з гуртожитку</b>\n\nНатисніть кнопку <b>під полем вводу</b>, щоб відкрити Mini App.",
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="🔙 Назад", callback_data="req_zv_menu")]]
+        ),
         parse_mode="HTML",
     )
+    await callback.message.answer(
+        "⬇️ Кнопка Mini App внизу клавіатури:",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🗓 Відкрити календар Зв", web_app=WebAppInfo(url=url))],
+                [KeyboardButton(text="❌ Закрити клавіатуру")],
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        ),
+    )
     await callback.answer()
+
+
+@router.message(F.text == "❌ Закрити клавіатуру")
+async def close_webapp_keyboard(message: Message):
+    await message.answer("Клавіатуру Mini App закрито.", reply_markup=ReplyKeyboardRemove())
 
 
 @router.message(F.web_app_data)
@@ -232,7 +253,7 @@ async def zv_dorm_webapp_submit(message: Message, state: FSMContext, bot: Bot):
     await update_user_last_zv_reason(message.from_user.id, reason)
     await notify_admins_about_request(bot, user.full_name)
     await state.clear()
-    await message.answer("✅ Запит на Зв з гуртожитку надіслано адміністраторам.")
+    await message.answer("✅ Запит на Зв з гуртожитку надіслано адміністраторам.", reply_markup=ReplyKeyboardRemove())
 
 
 @router.callback_query(F.data == "req_zv_start")
