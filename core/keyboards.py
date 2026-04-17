@@ -1,10 +1,16 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from core.config import POLL_DISPLAY_NAMES, SUBJECT_CODES
 
 # --- НИЖНЯ ПАНЕЛЬ (Reply) ---
-def get_reply_kb(is_admin: bool) -> ReplyKeyboardMarkup:
+def get_reply_kb(is_admin: bool, webapp_url: str = "") -> ReplyKeyboardMarkup:
+    if webapp_url:
+        return ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=webapp_url))]],
+            resize_keyboard=True,
+            persistent=True,
+        )
     buttons = [[KeyboardButton(text="🎓 Панель курсанта")]]
     if is_admin:
         buttons.append([KeyboardButton(text="⚙️ Панель адміністратора")])

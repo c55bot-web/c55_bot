@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
@@ -9,7 +10,7 @@ from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Імпорт налаштувань та клавіатур
-from core.config import BOT_TOKEN, GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG
+from core.config import BOT_TOKEN, GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG, C55_WEBAPP_URL
 from core.keyboards import get_reply_kb
 from core.bot_commands import setup_bot_commands, build_help_text
 
@@ -33,6 +34,15 @@ from handlers.options import router as options_router
 from handlers.sne import router as sne_router
 
 logging.basicConfig(level=logging.INFO)
+
+def _c55_webapp_url(is_admin: bool = False) -> str:
+    if not C55_WEBAPP_URL:
+        return ""
+    parts = urlsplit(C55_WEBAPP_URL)
+    qs = dict(parse_qsl(parts.query, keep_blank_values=True))
+    qs["v"] = "20260417g"
+    qs["is_admin"] = "1" if is_admin else "0"
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(qs), parts.fragment))
 
 
 def _schedule_zv_cleanup():
@@ -213,8 +223,8 @@ async def main():
         await add_or_update_user(user.id, user.full_name, user.username, update_existing=False)
         is_admin = await check_is_admin(user.id)
         await message.answer(
-            f"Привіт, {user.full_name}! 👋\nТи успішно зареєстрований у базі.\n\nСкористайся кнопкою '🎓 Панель курсанта' для навігації.",
-            reply_markup=get_reply_kb(is_admin)
+            f"Привіт, {user.full_name}! 👋\nТи успішно зареєстрований у базі.\n\nСкористайся кнопкою '🌐 Відкрити C55 Web App'.",
+            reply_markup=get_reply_kb(is_admin, webapp_url=_c55_webapp_url(is_admin=is_admin))
         )
 
     @dp.message(Command("refresh"))
@@ -229,7 +239,7 @@ async def main():
         is_admin = await check_is_admin(user.id)
         await message.answer(
             "✅ Кнопки оновлено.",
-            reply_markup=get_reply_kb(is_admin),
+            reply_markup=get_reply_kb(is_admin, webapp_url=_c55_webapp_url(is_admin=is_admin)),
         )
 
     @dp.message(Command("admin"))

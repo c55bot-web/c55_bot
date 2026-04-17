@@ -3,7 +3,8 @@ tg.ready();
 tg.expand();
 
 const LAST_REASON_KEY = "c55_last_zv_reason";
-const mainWrap = document.getElementById("mainWrap");
+const studentDrawerWrap = document.getElementById("studentDrawerWrap");
+const adminDrawerWrap = document.getElementById("adminDrawerWrap");
 const toast = document.getElementById("toast");
 const params = new URLSearchParams(window.location.search);
 const isAdmin = params.get("is_admin") === "1";
@@ -42,12 +43,19 @@ const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
   }
 };
 
-if (!isAdmin) {
-  document.querySelectorAll(".admin-only").forEach((el) => {
-    el.style.display = "none";
-  });
-}
-bindDrawer(mainWrap, ".menu", isAdmin ? "pAdminStats" : "pProfile");
+bindDrawer(studentDrawerWrap, ".menu", "pProfile");
+bindDrawer(adminDrawerWrap, ".menu", "pAdminStats");
+
+document.getElementById("openStudent").onclick = () => {
+  studentDrawerWrap.classList.add("open");
+};
+document.getElementById("openAdmin").onclick = () => {
+  if (!isAdmin) {
+    tg.showAlert("Адмін-панель доступна лише адміністраторам.");
+    return;
+  }
+  adminDrawerWrap.classList.add("open");
+};
 
 document.getElementById("df").value = toDate(now);
 document.getElementById("tf").value = toTime(now);
@@ -91,7 +99,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417f`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417g`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
