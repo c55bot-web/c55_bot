@@ -41,10 +41,11 @@ const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
   if (menuButtons.length) {
     openPanel(defaultPanelId, menuButtons[0]);
   }
+  return openPanel;
 };
 
-bindDrawer(studentDrawerWrap, ".menu", "pProfile");
-bindDrawer(adminDrawerWrap, ".menu", "pAdminStats");
+const studentOpenPanel = bindDrawer(studentDrawerWrap, ".menu", "pProfile");
+const adminOpenPanel = bindDrawer(adminDrawerWrap, ".menu", "pAdminApprovals");
 
 document.getElementById("openStudent").onclick = () => {
   studentDrawerWrap.classList.add("open");
@@ -76,6 +77,9 @@ document.getElementById("lastReasonBtn").onclick = () => {
   if (!r) return tg.showAlert("Немає збереженої причини.");
   document.getElementById("zvReason").value = r;
 };
+document.getElementById("zvDormOpenBtn").onclick = () => studentOpenPanel("pZvDorm");
+document.getElementById("openProfileEditBtn").onclick = () => studentOpenPanel("pProfileEdit");
+document.getElementById("openCustomReqBtn").onclick = () => studentOpenPanel("pCustomReq");
 document.getElementById("zvDormBtn").onclick = () => {
   const date_from = document.getElementById("df").value;
   const time_from = document.getElementById("tf").value;
@@ -99,7 +103,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417g`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417h`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -149,3 +153,8 @@ document.getElementById("adminToggleBtn").onclick = () => {
 document.getElementById("adminPingBtn").onclick = () => sendAction("c55_admin_webapp", "admin_ping_all");
 document.getElementById("adminPollsListBtn").onclick = () => sendAction("c55_admin_webapp", "admin_polls_list");
 document.getElementById("adminClosePollsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_close_all_polls");
+document.getElementById("adminUsersOverviewBtn").onclick = () => sendAction("c55_admin_webapp", "admin_users_overview");
+document.getElementById("adminHistoryRecentBtn").onclick = () => sendAction("c55_admin_webapp", "admin_history_recent");
+document.querySelectorAll("#pAdminPollCreate [data-poll]").forEach((btn) => {
+  btn.onclick = () => sendAction("c55_admin_webapp", "admin_create_poll", { poll_type: btn.dataset.poll });
+});

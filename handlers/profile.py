@@ -1,5 +1,6 @@
 from aiogram import Router, F, Bot
 import json
+from datetime import datetime, timedelta
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from aiogram.types import (
@@ -15,14 +16,14 @@ from aiogram.filters import Command
 
 from core.states import EditUser, CustomPoll, CustomRequest, CustomRequestReply
 from core.keyboards import get_profile_kb, get_back_btn, get_schedule_kb, get_student_panel_kb
-from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAPP_URL
+from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAPP_URL, POLLS_CONFIG, POLL_DISPLAY_NAMES
 from database.requests import (
     async_session, check_is_admin, add_approval_request, backup_user_to_json, get_schedule_by_day, save_new_poll, get_setting,
     notify_admins_about_request, get_approval_by_id, add_approval_correspondence,
     get_distance_learning, get_subject_text, check_schedule_has_classrooms, update_user_last_zv_reason,
     get_pending_approvals_count, get_users_count, get_users_with_requests_by_types,
     get_approvals_by_type, process_approval, toggle_setting, get_all_settings,
-    get_active_polls, close_poll_in_db, get_users_with_requests
+    get_active_polls, close_poll_in_db, get_users_with_requests, get_closed_polls_history
 )
 from database.models import User
 from core.zv_helpers import zv_payload
@@ -44,7 +45,7 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417g"
+    qs["v"] = "20260417h"
     qs["is_admin"] = "1" if is_admin else "0"
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
@@ -260,6 +261,52 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
                 await close_poll_in_db(p.tg_poll_id)
                 closed += 1
             return await message.answer(f"🛑 Закрито опитувань: <b>{closed}</b>", parse_mode="HTML")
+
+        if action == "admin_users_overview":
+            async with async_session() as session:
+                users = (await session.execute(select(User))).scalars().all()
+            total = len(users)
+            dorm = sum(1 for u in users if u.in_dorm)
+            admins = sum(1 for u in users if u.is_admin)
+            lines = [
+                "👥 <b>Курсанти / користувачі</b>",
+                "",
+                f"Всього у БД: <b>{total}</b>",
+                f"З гуртожитку: <b>{dorm}</b>",
+                f"Адмінів: <b>{admins}</b>",
+            ]
+            return await message.answer("\n".join(lines), parse_mode="HTML")
+
+        if action == "admin_history_recent":
+            polls = await get_closed_polls_history(limit_days=7)
+            if not polls:
+                return await message.answer("ℹ️ Історія порожня (за 7 днів).")
+            lines = ["📊 <b>Останні закриті опитування</b>", ""]
+            for p in polls[:20]:
+                created = p.created_at.strftime("%d.%m %H:%M") if p.created_at else "?"
+                name = POLL_DISPLAY_NAMES.get(p.type, p.type)
+                lines.append(f"• {name} ({p.type}) - {created}")
+            return await message.answer("\n".join(lines), parse_mode="HTML")
+
+        if action == "admin_create_poll":
+            poll_type = str(payload.get("poll_type", "")).strip()
+            cfg = POLLS_CONFIG.get(poll_type)
+            if not cfg:
+                return await message.answer("❌ Невідомий тип опитування.")
+            now = datetime.now()
+            effective = now + timedelta(days=1) if poll_type == "rozvid_1" else now
+            q = cfg["question"].format(date=effective.strftime("%d.%m.%Y"), month=effective.strftime("%B"))
+            poll_msg = await bot.send_poll(
+                chat_id=GROUP_CHAT_ID,
+                message_thread_id=MESSAGE_THREAD_ID,
+                question=q,
+                options=cfg["options"],
+                is_anonymous=False,
+                allows_multiple_answers=False,
+            )
+            await save_new_poll(poll_msg.poll.id, poll_msg.message_id, GROUP_CHAT_ID, poll_type)
+            display = POLL_DISPLAY_NAMES.get(poll_type, poll_type)
+            return await message.answer(f"✅ Створено опитування: <b>{display}</b>", parse_mode="HTML")
 
         return await message.answer("ℹ️ Невідома дія адмін-панелі.")
 

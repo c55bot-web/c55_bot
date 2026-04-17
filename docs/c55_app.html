@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417g" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417h" />
 </head>
 <body>
   <div class="app">
@@ -34,12 +34,16 @@
       </div>
       <div class="menu">
         <button data-panel="pProfile">👤 Мій профіль</button>
-        <button data-panel="pProfileEdit">✏️ Запит на зміну профілю</button>
-        <button data-panel="pZvCity">🏙 Подати З/В у місто</button>
-        <button data-panel="pZvDorm">🏠 Подати З/В з гуртожитку</button>
-        <button data-panel="pSchedule">📅 Розклад (на сайті)</button>
-        <button data-panel="pCustomReq">📝 Свій запит</button>
-        <button data-panel="pCustomPoll">🗳 Власне голосування</button>
+        <button data-panel="pRequest">📝 Подати запит</button>
+        <button data-panel="pCustomPoll">🛠 Створити своє голосування</button>
+        <button data-panel="pSchedule">📖 Переглянути розклад</button>
+      </div>
+
+      <div class="panel" id="pRequest">
+        <button class="btn ok" id="zvCityBtn">🏙 Подати себе у З/В у місто</button>
+        <button class="btn ok" id="zvDormOpenBtn">🏠 Подати себе у З/В з гуртожитку</button>
+        <button class="btn alt" id="openProfileEditBtn">✏️ Запит на зміну профілю</button>
+        <button class="btn alt" id="openCustomReqBtn">📝 Свій запит (довільний текст)</button>
       </div>
 
       <div class="panel" id="pProfile">
@@ -144,21 +148,29 @@
         <div class="drawer-title">⚙️ Панель адміністратора</div>
       </div>
       <div class="menu">
-        <button data-panel="pAdminStats">📊 Огляд і статистика</button>
-        <button data-panel="pAdminApprovals">✅ Масове погодження</button>
-        <button data-panel="pAdminAutomation">🤖 Автофункції</button>
-        <button data-panel="pAdminOps">🛠 Операції</button>
-      </div>
-
-      <div class="panel" id="pAdminStats">
-        <button class="btn alt" id="adminStatsBtn">Оновити статистику в чаті</button>
-        <button class="btn alt" id="adminRequestsOverviewBtn">Показати запити по курсантам</button>
-        <button class="btn alt" id="adminCityReportBtn">Звіт по З/В у місто</button>
+        <button data-panel="pAdminApprovals">🔔 Запити</button>
+        <button data-panel="pAdminPollCreate">📋 Розрахунки о/с</button>
+        <button data-panel="pCustomPoll">🛠 Створити своє голосування</button>
+        <button data-panel="pSchedule">📅 Керування розкладом</button>
+        <button data-panel="pAdminOps">🛑 Закрити опитування / Покликати всіх</button>
+        <button data-panel="pAdminUsers">👥 Курсанти</button>
+        <button data-panel="pAdminAutomation">⚙️ Авто-опитування</button>
+        <button data-panel="pAdminHistory">📊 Історія</button>
       </div>
 
       <div class="panel" id="pAdminApprovals">
+        <button class="btn alt" id="adminStatsBtn">📊 Огляд і статистика</button>
+        <button class="btn alt" id="adminRequestsOverviewBtn">Показати запити по курсантам</button>
+        <button class="btn alt" id="adminCityReportBtn">Звіт по З/В у місто</button>
         <button class="btn ok" id="approveAllCityBtn">Погодити всі З/В у місто</button>
         <button class="btn ok" id="approveAllDormBtn">Погодити всі З/В з гуртожитку</button>
+      </div>
+
+      <div class="panel" id="pAdminPollCreate">
+        <button class="btn" data-poll="rozvid_1">Створити: Розрахунок о/с (варіант 1)</button>
+        <button class="btn" data-poll="rozvid_2">Створити: Розрахунок о/с (варіант 2)</button>
+        <button class="btn" data-poll="dorm_rent">Створити: Оплата гуртожитку</button>
+        <button class="btn" data-poll="dorm_fund">Створити: Оплата фонду</button>
       </div>
 
       <div class="panel" id="pAdminAutomation">
@@ -181,12 +193,20 @@
         <button class="btn warn" id="adminPollsListBtn">Список активних опитувань</button>
         <button class="btn warn" id="adminClosePollsBtn">Закрити всі активні опитування</button>
       </div>
+
+      <div class="panel" id="pAdminUsers">
+        <button class="btn alt" id="adminUsersOverviewBtn">Огляд курсантів</button>
+      </div>
+
+      <div class="panel" id="pAdminHistory">
+        <button class="btn alt" id="adminHistoryRecentBtn">Історія (останні 7 днів)</button>
+      </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417g"></script>
+  <script src="./c55_app.js?v=20260417h"></script>
 </body>
 </html>
