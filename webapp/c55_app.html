@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417o" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417p" />
 </head>
 <body>
   <div class="app">
@@ -159,9 +159,20 @@
       <div class="panel" id="pAdminApprovals">
         <button class="btn alt" id="adminStatsBtn">📊 Огляд і статистика</button>
         <button class="btn alt" id="adminRequestsOverviewBtn">Показати запити по курсантам</button>
+        <button class="btn alt" id="adminPendingCityBtn">Список запитів З/В у місто</button>
+        <button class="btn alt" id="adminPendingDormBtn">Список запитів З/В з гуртожитку</button>
+        <button class="btn alt" id="adminPendingOtherBtn">Список інших запитів</button>
         <button class="btn alt" id="adminCityReportBtn">Звіт по З/В у місто</button>
         <button class="btn ok" id="approveAllCityBtn">Погодити всі З/В у місто</button>
         <button class="btn ok" id="approveAllDormBtn">Погодити всі З/В з гуртожитку</button>
+        <div class="row">
+          <div class="field"><label class="label">ID запиту</label><input id="adminApprovalId" placeholder="Напр. 123" /></div>
+          <div class="field">
+            <label class="label">Рішення</label>
+            <select id="adminApprovalDecision"><option value="approve">Погодити</option><option value="reject">Відхилити</option></select>
+          </div>
+        </div>
+        <button class="btn warn" id="adminApprovalApplyBtn">Застосувати рішення по ID</button>
       </div>
 
       <div class="panel" id="pAdminPollCreate">
@@ -195,6 +206,7 @@
 
       <div class="panel" id="pAdminUsers">
         <button class="btn alt" id="adminUsersOverviewBtn">Огляд курсантів</button>
+        <button class="btn alt" id="adminUsersListBtn">Список курсантів</button>
       </div>
 
       <div class="panel" id="pAdminHistory">
@@ -219,6 +231,8 @@
           </div>
         </div>
         <button class="btn warn" id="adminSchShowBtn">Показати розклад</button>
+        <button class="btn alt" id="adminSchReportBtn">Згенерувати звіт командира</button>
+        <button class="btn warn" id="adminSchClearBtn">Очистити розклад тижня</button>
         <div id="adminScheduleResult" class="schedule-result"></div>
       </div>
 
@@ -233,6 +247,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417o"></script>
+  <script src="./c55_app.js?v=20260417p"></script>
 </body>
 </html>

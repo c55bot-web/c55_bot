@@ -46,7 +46,7 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417o"
+    qs["v"] = "20260417p"
     qs["is_admin"] = "1" if is_admin else "0"
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
@@ -187,6 +187,65 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
                         pass
             return await message.answer(f"✅ Підтверджено запитів: <b>{done}</b>", parse_mode="HTML")
 
+        if action == "admin_pending_list":
+            category = str(payload.get("category", "")).strip()
+            if category == "zv_city":
+                types = ["zv_city"]
+                title = "🏙 <b>Запити: З/В у місто</b>"
+            elif category == "zv_dorm":
+                types = ["zv_dorm", "zv_release"]
+                title = "🏠 <b>Запити: З/В з гуртожитку</b>"
+            elif category == "other":
+                types = ["admin_request", "custom_request", "profile_update"]
+                title = "📝 <b>Запити: інші</b>"
+            else:
+                return await message.answer("❌ Невідома категорія запитів.")
+
+            rows = []
+            for t in types:
+                rows.extend(await get_approvals_by_type(t))
+            if not rows:
+                return await message.answer("✅ У цій категорії немає активних запитів.")
+            rows.sort(key=lambda x: x.created_at or datetime.min)
+
+            async with async_session() as session:
+                lines = [title, ""]
+                for app in rows[:40]:
+                    u = await session.get(User, app.user_id)
+                    name = u.full_name if u else f"ID {app.user_id}"
+                    created = app.created_at.strftime("%d.%m %H:%M") if app.created_at else "?"
+                    lines.append(f"• <code>{app.id}</code> | {app.type} | {name} | {created}")
+                if len(rows) > 40:
+                    lines.append(f"\n… ще {len(rows) - 40} запит(ів)")
+            return await message.answer("\n".join(lines), parse_mode="HTML")
+
+        if action == "admin_approval_apply":
+            approval_id_raw = payload.get("approval_id")
+            decision = str(payload.get("decision", "approve")).strip().lower()
+            try:
+                approval_id = int(approval_id_raw)
+            except Exception:
+                return await message.answer("❌ Некоректний ID запиту.")
+            app = await get_approval_by_id(approval_id)
+            if not app:
+                return await message.answer("❌ Запит із таким ID не знайдено.")
+            approve = decision == "approve"
+            uid = await process_approval(approval_id, approve)
+            if uid and approve:
+                try:
+                    await bot.send_message(uid, "✅ Ваш запит погоджено.")
+                except Exception:
+                    pass
+            elif uid and not approve:
+                try:
+                    await bot.send_message(uid, "❌ Ваш запит відхилено.")
+                except Exception:
+                    pass
+            return await message.answer(
+                f"{'✅' if approve else '🛑'} Оброблено запит <code>{approval_id}</code>: <b>{'погоджено' if approve else 'відхилено'}</b>.",
+                parse_mode="HTML",
+            )
+
         if action == "admin_toggle_auto":
             key = str(payload.get("key", "")).strip()
             allowed = {
@@ -316,6 +375,20 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
             ]
             return await message.answer("\n".join(lines), parse_mode="HTML")
 
+        if action == "admin_users_list":
+            async with async_session() as session:
+                users = (await session.execute(select(User).order_by(User.list_number.asc().nulls_last(), User.full_name))).scalars().all()
+            if not users:
+                return await message.answer("ℹ️ У базі немає користувачів.")
+            lines = ["👥 <b>Список курсантів</b>", ""]
+            for u in users[:80]:
+                n = u.list_number if u.list_number is not None else "—"
+                uname = f" @{u.username}" if u.username else ""
+                lines.append(f"• {n}. {u.full_name}{uname}")
+            if len(users) > 80:
+                lines.append(f"\n… ще {len(users) - 80} користувач(ів)")
+            return await message.answer("\n".join(lines), parse_mode="HTML")
+
         if action == "admin_history_recent":
             polls = await get_closed_polls_history(limit_days=7)
             if not polls:
@@ -376,6 +449,44 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
             )
             await save_new_poll(poll_msg.poll.id, poll_msg.message_id, GROUP_CHAT_ID, "custom")
             return await message.answer("✅ Власне голосування створено в групі.")
+
+        if action == "admin_schedule_report":
+            week = str(payload.get("week", "current")).strip()
+            is_next = week == "next"
+            days_order = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+            all_lessons = []
+            for day in days_order:
+                lessons = await get_schedule_by_day(day, is_next_week=is_next)
+                all_lessons.extend([(day, l) for l in lessons])
+            if not all_lessons:
+                return await message.answer("ℹ️ Розклад порожній для вибраного тижня.")
+
+            dates = {}
+            for day, l in all_lessons:
+                if l.date_str:
+                    dates[day] = l.date_str
+            date_start = dates.get("Пн", "??")
+            date_end = dates.get("Сб", dates.get("Пт", "??"))
+
+            lines = [f"📄 <b>Звіт для командира ({'наступний' if is_next else 'поточний'} тиждень)</b>", "", f"Навчальний тиждень ({date_start} - {date_end})", ""]
+            for day in days_order:
+                day_lessons = [l for d, l in all_lessons if d == day]
+                if not day_lessons:
+                    continue
+                lines.append(f"<b>{day}</b>")
+                lines.append(f"С-55, розхід на пари {dates.get(day, '')}")
+                for l in day_lessons:
+                    loc = l.location_text if l.location_text else l.lesson_text
+                    lines.append(f"{l.pair_num} пара: {loc} (28 о/с)")
+                lines.append("")
+            return await message.answer("\n".join(lines), parse_mode="HTML")
+
+        if action == "admin_schedule_clear":
+            week = str(payload.get("week", "current")).strip()
+            is_next = week == "next"
+            from database.requests import clear_schedule_db
+            await clear_schedule_db(is_next)
+            return await message.answer(f"✅ Розклад ({'наступний' if is_next else 'поточний'} тиждень) очищено.")
 
         return await message.answer("ℹ️ Невідома дія адмін-панелі.")
 

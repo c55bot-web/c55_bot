@@ -115,7 +115,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417o`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417p`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -155,9 +155,18 @@ document.getElementById("pollBtn").onclick = () => {
 
 document.getElementById("adminStatsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_stats");
 document.getElementById("adminRequestsOverviewBtn").onclick = () => sendAction("c55_admin_webapp", "admin_requests_overview");
+document.getElementById("adminPendingCityBtn").onclick = () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "zv_city" });
+document.getElementById("adminPendingDormBtn").onclick = () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "zv_dorm" });
+document.getElementById("adminPendingOtherBtn").onclick = () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "other" });
 document.getElementById("adminCityReportBtn").onclick = () => sendAction("c55_admin_webapp", "admin_city_report");
 document.getElementById("approveAllCityBtn").onclick = () => sendAction("c55_admin_webapp", "admin_confirm_all", { category: "zv_city" });
 document.getElementById("approveAllDormBtn").onclick = () => sendAction("c55_admin_webapp", "admin_confirm_all", { category: "zv_dorm" });
+document.getElementById("adminApprovalApplyBtn").onclick = () => {
+  const id = Number(document.getElementById("adminApprovalId").value.trim());
+  const decision = document.getElementById("adminApprovalDecision").value;
+  if (!Number.isInteger(id) || id <= 0) return tg.showAlert("Вкажіть коректний ID запиту.");
+  sendAction("c55_admin_webapp", "admin_approval_apply", { approval_id: id, decision });
+};
 document.getElementById("adminToggleBtn").onclick = () => {
   const key = document.getElementById("adminToggleKey").value;
   sendAction("c55_admin_webapp", "admin_toggle_auto", { key });
@@ -166,6 +175,7 @@ document.getElementById("adminPingBtn").onclick = () => sendAction("c55_admin_we
 document.getElementById("adminPollsListBtn").onclick = () => sendAction("c55_admin_webapp", "admin_polls_list");
 document.getElementById("adminClosePollsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_close_all_polls");
 document.getElementById("adminUsersOverviewBtn").onclick = () => sendAction("c55_admin_webapp", "admin_users_overview");
+document.getElementById("adminUsersListBtn").onclick = () => sendAction("c55_admin_webapp", "admin_users_list");
 document.getElementById("adminHistoryRecentBtn").onclick = () => sendAction("c55_admin_webapp", "admin_history_recent");
 document.getElementById("adminAutoStatusBtn").onclick = () => sendAction("c55_admin_webapp", "admin_auto_status");
 document.querySelectorAll("#pAdminPollCreate [data-poll]").forEach((btn) => {
@@ -188,7 +198,7 @@ document.getElementById("adminSchShowBtn").onclick = async () => {
   const box = document.getElementById("adminScheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417o`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417p`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -208,4 +218,12 @@ document.getElementById("adminSchShowBtn").onclick = async () => {
   } catch (e) {
     box.textContent = "Не вдалося завантажити розклад. Спробуйте пізніше.";
   }
+};
+document.getElementById("adminSchReportBtn").onclick = () => {
+  const week = document.getElementById("adminSchWeek").value;
+  sendAction("c55_admin_webapp", "admin_schedule_report", { week });
+};
+document.getElementById("adminSchClearBtn").onclick = () => {
+  const week = document.getElementById("adminSchWeek").value;
+  sendAction("c55_admin_webapp", "admin_schedule_clear", { week });
 };
