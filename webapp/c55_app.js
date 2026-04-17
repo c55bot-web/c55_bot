@@ -12,6 +12,7 @@ const now = new Date();
 const toDate = (d) => d.toISOString().slice(0, 10);
 const toTime = (d) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 const showToast = (text) => {
+  if (!toast) return;
   toast.textContent = text;
   toast.classList.add("show");
   setTimeout(() => toast.classList.remove("show"), 1800);
@@ -24,6 +25,7 @@ const sendAction = (kind, action, payload = {}) => {
 };
 
 const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
+  if (!drawerWrap) return () => {};
   drawerWrap.addEventListener("click", (e) => { if (e.target === drawerWrap) drawerWrap.classList.remove("open"); });
 
   const menuButtons = Array.from(drawerWrap.querySelectorAll(`${menuSelector} button[data-panel]`));
@@ -47,15 +49,17 @@ const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
 bindDrawer(studentDrawerWrap, ".menu", "pProfile");
 bindDrawer(adminDrawerWrap, ".menu", "pAdminApprovals");
 
-document.getElementById("openStudent").onclick = () => {
-  studentDrawerWrap.classList.add("open");
+const openStudentBtn = document.getElementById("openStudent");
+if (openStudentBtn) openStudentBtn.onclick = () => {
+  if (studentDrawerWrap) studentDrawerWrap.classList.add("open");
 };
-document.getElementById("openAdmin").onclick = () => {
+const openAdminBtn = document.getElementById("openAdmin");
+if (openAdminBtn) openAdminBtn.onclick = () => {
   if (!isAdmin) {
     tg.showAlert("Адмін-панель доступна лише адміністраторам.");
     return;
   }
-  adminDrawerWrap.classList.add("open");
+  if (adminDrawerWrap) adminDrawerWrap.classList.add("open");
 };
 
 document.getElementById("df").value = toDate(now);
@@ -100,7 +104,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417i`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417j`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
