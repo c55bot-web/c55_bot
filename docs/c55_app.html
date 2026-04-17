@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>C55 Web App</title>
+  <link rel="stylesheet" href="./c55_app.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="top">
+      <div>
+        <div class="title">C55 Web App</div>
+        <div class="subtitle">Єдина панель взаємодії (beta)</div>
+      </div>
+      <div class="pill">dark violet</div>
+    </div>
+
+    <div class="grid">
+      <div class="card" id="openStudent">
+        <h3>🎓 Панель курсанта</h3>
+        <p>Профіль, запити, Зв, розклад, власне голосування.</p>
+      </div>
+      <div class="card admin">
+        <h3>⚙️ Панель адміністратора</h3>
+        <p>Буде підключено наступним кроком.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-wrap" id="studentDrawerWrap">
+    <div class="drawer">
+      <div class="drawer-head">
+        <div class="drawer-title">🎓 Панель курсанта</div>
+        <button class="icon-btn" id="closeDrawer">Закрити</button>
+      </div>
+      <div class="menu">
+        <button data-panel="pProfile">👤 Мій профіль</button>
+        <button data-panel="pProfileEdit">✏️ Запит на зміну профілю</button>
+        <button data-panel="pZvCity">🏙 Подати Зв у місто</button>
+        <button data-panel="pZvDorm">🏠 Подати Зв з гуртожитку</button>
+        <button data-panel="pSchedule">📅 Розклад (надіслати в чат)</button>
+        <button data-panel="pCustomReq">📝 Свій запит</button>
+        <button data-panel="pCustomPoll">🗳 Власне голосування</button>
+      </div>
+
+      <div class="panel" id="pProfile">
+        <button class="btn alt" id="profileSnapshotBtn">Показати мій профіль у чаті</button>
+        <div class="hint">Бот надішле актуальні дані профілю приватним повідомленням.</div>
+      </div>
+
+      <div class="panel" id="pProfileEdit">
+        <div class="field">
+          <label class="label">Поле</label>
+          <select id="pfField">
+            <option value="fullname">ПІБ</option>
+            <option value="phone">Телефон</option>
+            <option value="address">Адреса</option>
+            <option value="listnum">№ за списком</option>
+            <option value="gender">Стать (True=жіноча, False=чоловіча)</option>
+            <option value="dorm">Статус гуртожитку (True/False)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label">Нове значення</label>
+          <input id="pfValue" placeholder="Введіть нове значення" />
+        </div>
+        <button class="btn" id="profileUpdateBtn">Надіслати запит</button>
+      </div>
+
+      <div class="panel" id="pZvCity">
+        <button class="btn ok" id="zvCityBtn">Подати у Зв у місто</button>
+        <div class="hint">Запит одразу піде адміністраторам.</div>
+      </div>
+
+      <div class="panel" id="pZvDorm">
+        <div class="row">
+          <div class="field"><label class="label">Дата початку</label><input type="date" id="df"></div>
+          <div class="field"><label class="label">Час початку</label><input type="time" id="tf"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label class="label">Дата завершення</label><input type="date" id="dt"></div>
+          <div class="field"><label class="label">Час завершення</label><input type="time" id="tt"></div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label class="label">Адреса</label>
+            <select id="addrMode">
+              <option value="db">Взяти з профілю (БД)</option>
+              <option value="manual">Ввести вручну</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label">Ручна адреса</label>
+            <input id="addrManual" placeholder="Якщо обрано manual" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Причина</label>
+          <textarea id="zvReason" placeholder="Напишіть причину"></textarea>
+        </div>
+        <button class="btn alt" id="lastReasonBtn">Використати останню причину</button>
+        <button class="btn" id="zvDormBtn">Надіслати Зв з гуртожитку</button>
+      </div>
+
+      <div class="panel" id="pSchedule">
+        <div class="row">
+          <div class="field">
+            <label class="label">Тиждень</label>
+            <select id="schWeek">
+              <option value="current">Поточний</option>
+              <option value="next">Наступний</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label">День</label>
+            <select id="schDay">
+              <option>Пн</option><option>Вт</option><option>Ср</option>
+              <option>Чт</option><option>Пт</option><option>Сб</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn warn" id="schSendBtn">Надіслати розклад у чат</button>
+      </div>
+
+      <div class="panel" id="pCustomReq">
+        <div class="field">
+          <label class="label">Текст запиту</label>
+          <textarea id="customReqText" placeholder="Опишіть свій запит"></textarea>
+        </div>
+        <button class="btn" id="customReqBtn">Надіслати запит</button>
+      </div>
+
+      <div class="panel" id="pCustomPoll">
+        <div class="field"><label class="label">Питання</label><input id="pollQ" placeholder="Текст питання" /></div>
+        <div class="field"><label class="label">Варіанти (кожен з нового рядка)</label><textarea id="pollOpts" placeholder="Варіант 1&#10;Варіант 2"></textarea></div>
+        <button class="btn" id="pollBtn">Створити голосування</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="./c55_app.js"></script>
+</body>
+</html>

@@ -1,17 +1,28 @@
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery
+import json
+
+from aiogram.types import (
+    Message,
+    CallbackQuery,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    WebAppInfo,
+)
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 from aiogram.filters import Command
 
 from core.states import EditUser, CustomPoll, CustomRequest, CustomRequestReply
 from core.keyboards import get_profile_kb, get_back_btn, get_schedule_kb, get_student_panel_kb
-from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID
+from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAPP_URL
 from database.requests import (
     async_session, check_is_admin, add_approval_request, backup_user_to_json, get_schedule_by_day, save_new_poll, get_setting,
-    notify_admins_about_request, get_approval_by_id, add_approval_correspondence
+    notify_admins_about_request, get_approval_by_id, add_approval_correspondence,
+    get_distance_learning, get_subject_text, check_schedule_has_classrooms, update_user_last_zv_reason
 )
 from database.models import User
+from core.zv_helpers import zv_payload
 
 router = Router()
 
@@ -46,24 +57,204 @@ EDIT_PROMPTS = {
 @router.message(F.text == "🎓 Панель курсанта")
 async def student_panel_cmd(message: Message, state: FSMContext):
     await state.clear()
-    try:
-        await message.delete()
-    except Exception:
-        pass
-    msg = await message.answer(
-        "🎓 <b>Панель курсанта</b>\nОберіть потрібний розділ:", 
-        reply_markup=get_student_panel_kb(), parse_mode="HTML"
+    if not C55_WEBAPP_URL:
+        msg = await message.answer(
+            "🎓 <b>Панель курсанта</b>\nОберіть потрібний розділ:",
+            reply_markup=get_student_panel_kb(),
+            parse_mode="HTML",
+        )
+        MENU_OWNERS[msg.message_id] = message.from_user.id
+        return
+    await message.answer(
+        "🎓 <b>C55 Web App</b>\nНатисніть кнопку <b>під полем вводу</b>, щоб відкрити єдину панель курсанта.",
+        parse_mode="HTML",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=C55_WEBAPP_URL))],
+                [KeyboardButton(text="❌ Закрити C55 Web клавіатуру")],
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        ),
     )
-    MENU_OWNERS[msg.message_id] = message.from_user.id
 
 @router.callback_query(F.data == "student_panel_main")
 async def student_panel_inline(callback: CallbackQuery, state: FSMContext):
     if not is_owner(callback): return await callback.answer("❌ Це меню викликав інший користувач!", show_alert=True)
     await state.clear()
+    if C55_WEBAPP_URL:
+        await callback.message.edit_text(
+            "🎓 <b>C55 Web App</b>\nНатисніть кнопку нижче поля вводу: <b>🌐 Відкрити C55 Web App</b>.",
+            reply_markup=get_back_btn("close_panel"),
+            parse_mode="HTML",
+        )
+        await callback.message.answer(
+            "⬇️ Кнопка відкриття C55 Web App:",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=C55_WEBAPP_URL))],
+                    [KeyboardButton(text="❌ Закрити C55 Web клавіатуру")],
+                ],
+                resize_keyboard=True,
+                one_time_keyboard=True,
+            ),
+        )
+        return
     await callback.message.edit_text(
         "🎓 <b>Панель курсанта</b>\nОберіть потрібний розділ:",
         reply_markup=get_student_panel_kb(), parse_mode="HTML"
     )
+
+
+@router.message(F.text == "❌ Закрити C55 Web клавіатуру")
+async def close_c55_web_keyboard(message: Message):
+    await message.answer("Клавіатуру C55 Web App закрито.", reply_markup=ReplyKeyboardRemove())
+
+
+@router.message(F.web_app_data)
+async def c55_student_webapp_submit(message: Message, bot: Bot):
+    try:
+        payload = json.loads(message.web_app_data.data or "{}")
+    except Exception:
+        return
+    if payload.get("kind") != "c55_student_webapp":
+        return
+
+    action = str(payload.get("action", "")).strip()
+    async with async_session() as session:
+        user = await session.get(User, message.from_user.id)
+        if not user:
+            return await message.answer("❌ Вас немає в базі. Напишіть /start.")
+        user_name = user.full_name
+
+    if action == "profile_snapshot":
+        async with async_session() as session:
+            user = await session.get(User, message.from_user.id)
+            if not user:
+                return await message.answer("❌ Вас немає в базі.")
+            text = await render_profile_text(user)
+            return await message.answer(text, parse_mode="HTML")
+
+    if action == "profile_update_request":
+        field = str(payload.get("field", "")).strip()
+        new_value = str(payload.get("value", "")).strip()
+        allowed = {"fullname", "phone", "address", "listnum", "gender", "dorm"}
+        if field not in allowed:
+            return await message.answer("❌ Некоректне поле профілю.")
+        async with async_session() as session:
+            user = await session.get(User, message.from_user.id)
+            if not user:
+                return await message.answer("❌ Вас немає в базі.")
+            old_map = {
+                "fullname": user.full_name or "",
+                "phone": user.phone_number or "",
+                "address": user.address or "",
+                "listnum": str(user.list_number or ""),
+                "gender": str(user.is_female),
+                "dorm": str(user.in_dorm),
+            }
+            if field == "listnum":
+                if not new_value.isdigit() or int(new_value) < 1:
+                    return await message.answer("❌ Номер за списком має бути цілим числом.")
+                new_value = str(int(new_value))
+            elif field in {"gender", "dorm"}:
+                if new_value not in {"True", "False"}:
+                    return await message.answer("❌ Для цього поля потрібно True/False.")
+            elif not new_value:
+                return await message.answer("❌ Значення не може бути порожнім.")
+        await add_approval_request(message.from_user.id, "profile_update", field, old_map[field], new_value)
+        await notify_admins_about_request(bot, user_name)
+        return await message.answer("✅ Запит на зміну профілю надіслано.")
+
+    if action == "custom_request":
+        text = str(payload.get("text", "")).strip()
+        if not text:
+            return await message.answer("❌ Введіть текст запиту.")
+        await add_approval_request(message.from_user.id, "custom_request", new_val=text)
+        await notify_admins_about_request(bot, user_name)
+        return await message.answer("✅ Ваш запит надіслано адміністраторам.")
+
+    if action == "zv_city_submit":
+        await add_approval_request(message.from_user.id, "zv_city", new_val="{}")
+        await notify_admins_about_request(bot, user_name)
+        return await message.answer("✅ Подання у Зв у місто надіслано.")
+
+    if action == "zv_dorm_submit":
+        date_from = str(payload.get("date_from", "")).strip()
+        date_to = str(payload.get("date_to", "")).strip()
+        time_from = str(payload.get("time_from", "")).strip()
+        time_to = str(payload.get("time_to", "")).strip()
+        reason = str(payload.get("reason", "")).strip()
+        address_mode = str(payload.get("address_mode", "db")).strip().lower()
+        address_manual = str(payload.get("address", "")).strip()
+        if not all([date_from, date_to, time_from, time_to, reason]):
+            return await message.answer("❌ Заповніть дату/час і причину.")
+        async with async_session() as session:
+            user = await session.get(User, message.from_user.id)
+            if not user:
+                return await message.answer("❌ Вас немає в базі.")
+            if address_mode == "db":
+                address = (user.address or "").strip()
+                if not address:
+                    return await message.answer("❌ У профілі немає адреси. Оберіть ручний ввід.")
+            elif address_mode == "manual":
+                if not address_manual:
+                    return await message.answer("❌ Введіть адресу вручну.")
+                address = address_manual
+            else:
+                return await message.answer("❌ Некоректний режим адреси.")
+        payload_json = zv_payload(date_from, time_from, date_to, time_to, reason=reason, address=address)
+        await add_approval_request(message.from_user.id, "zv_dorm", new_val=payload_json)
+        await update_user_last_zv_reason(message.from_user.id, reason)
+        await notify_admins_about_request(bot, user_name)
+        return await message.answer("✅ Запит на Зв з гуртожитку надіслано.")
+
+    if action == "custom_poll_submit":
+        question = str(payload.get("question", "")).strip()
+        options = payload.get("options", [])
+        if not isinstance(options, list):
+            options = []
+        options = [str(x).strip() for x in options if str(x).strip()]
+        if not question or len(options) < 2 or len(options) > 10:
+            return await message.answer("❌ Потрібне питання і 2-10 варіантів.")
+        poll_msg = await bot.send_poll(
+            chat_id=GROUP_CHAT_ID,
+            message_thread_id=MESSAGE_THREAD_ID,
+            question=question,
+            options=options,
+            is_anonymous=False,
+            allows_multiple_answers=False,
+        )
+        await save_new_poll(poll_msg.poll.id, poll_msg.message_id, GROUP_CHAT_ID, "custom")
+        return await message.answer("✅ Власне голосування створено в групі.")
+
+    if action == "schedule_to_chat":
+        day = str(payload.get("day", "Пн")).strip()
+        week = str(payload.get("week", "current")).strip()
+        is_next = (week == "next")
+        lessons = await get_schedule_by_day(day, is_next_week=is_next)
+        if not lessons:
+            return await message.answer(f"ℹ️ На {day} пар немає.")
+        is_distance = await get_distance_learning(is_next_week=is_next)
+        if not is_distance:
+            is_distance = not await check_schedule_has_classrooms(is_next_week=is_next)
+        title = "Наступний" if is_next else "Поточний"
+        text = f"📅 <b>Розклад на {day} ({title})</b>"
+        if is_distance:
+            text += " — дистанційно"
+        text += "\n\n"
+        from schedule_system.formatter import extract_subject_code
+        for l in lessons:
+            text += f"<b>{l.pair_num} пара:</b> {l.lesson_text}\n"
+            if is_distance:
+                code = extract_subject_code(l.lesson_text)
+                if code:
+                    subj_text = await get_subject_text(code)
+                    if subj_text:
+                        text += subj_text + "\n"
+        return await message.answer(text, parse_mode="HTML")
+
+    await message.answer("ℹ️ Дія Web App не розпізнана.")
 
 @router.callback_query(F.data == "request_menu")
 async def request_menu(callback: CallbackQuery, state: FSMContext):

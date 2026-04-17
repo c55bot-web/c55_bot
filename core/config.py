@@ -15,6 +15,8 @@ SCHEDULE_THREAD_ID = int(_sch_thread_id_str) if _sch_thread_id_str.isdigit() els
 
 # URL Telegram Mini App для подання "Зв з гуртожитку" (HTTPS, публічно доступний)
 ZV_DORM_WEBAPP_URL = os.getenv("ZV_DORM_WEBAPP_URL", "").strip()
+# Єдиний URL C55 Web App (якщо не задано — використовуємо ZV_DORM_WEBAPP_URL)
+C55_WEBAPP_URL = os.getenv("C55_WEBAPP_URL", ZV_DORM_WEBAPP_URL).strip()
 
 ADMIN_IDS = [int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip().isdigit()]
 

@@ -1,0 +1,88 @@
+:root {
+  --bg: #0e0e12;
+  --card: #171722;
+  --card-2: #1f1f2b;
+  --text: #ececf4;
+  --muted: #9f9fb7;
+  --accent: #8b5cf6;
+  --accent-2: #6d28d9;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --border: #2c2c3e;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, Arial, sans-serif;
+  background: radial-gradient(1200px 700px at -10% -10%, #2a1f47, var(--bg));
+  color: var(--text);
+  min-height: 100vh;
+}
+.app { padding: 16px; max-width: 760px; margin: 0 auto; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.title { font-size: 22px; font-weight: 800; letter-spacing: 0.2px; }
+.subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.pill { font-size: 12px; background: #2a2a3a; color: #d7d7ea; border: 1px solid var(--border); border-radius: 999px; padding: 6px 10px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.card {
+  background: linear-gradient(180deg, var(--card), var(--card-2));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.card:hover { transform: translateY(-1px); box-shadow: 0 10px 25px rgba(0,0,0,.25); border-color: #4c3a76; }
+.card h3 { margin: 0 0 6px 0; font-size: 16px; }
+.card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.35; }
+.card.admin { opacity: .62; cursor: not-allowed; }
+.drawer-wrap {
+  position: fixed; inset: 0; display: none; z-index: 20;
+  background: rgba(8, 8, 12, .55); backdrop-filter: blur(2px);
+}
+.drawer-wrap.open { display: block; }
+.drawer {
+  position: absolute; right: 0; top: 0; bottom: 0; width: min(92vw, 580px);
+  background: #12121b; border-left: 1px solid var(--border);
+  transform: translateX(100%); transition: transform .24s ease;
+  display: flex; flex-direction: column;
+}
+.drawer-wrap.open .drawer { transform: translateX(0); }
+.drawer-head { display:flex; justify-content:space-between; align-items:center; padding: 14px 14px 10px; border-bottom:1px solid var(--border); }
+.drawer-title { font-size: 18px; font-weight: 700; }
+.icon-btn { border:1px solid var(--border); background:#1e1e2b; color:#ddd; border-radius:10px; padding:8px 10px; cursor:pointer; }
+.menu { display:grid; grid-template-columns: 1fr; gap: 8px; padding: 12px; }
+.menu button {
+  text-align:left; border:1px solid var(--border); background:#1a1a27; color:#ececf4;
+  border-radius:12px; padding:11px 12px; cursor:pointer; transition: all .18s ease;
+}
+.menu button:hover { border-color:#4c3a76; background:#222235; }
+.panel {
+  margin: 0 12px 12px; border: 1px solid var(--border); background: #171726;
+  border-radius: 14px; padding: 12px; display: none; animation: slideUp .22s ease;
+}
+.panel.show { display: block; }
+@keyframes slideUp { from { opacity:.0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+.field { margin-bottom: 10px; }
+.label { display:block; margin-bottom: 6px; color:#c7c7dc; font-size:13px; }
+input, select, textarea {
+  width: 100%; background:#10101a; color:#f2f2fa; border:1px solid #323248;
+  border-radius: 10px; padding: 10px; font-size: 14px;
+}
+textarea { min-height: 90px; resize: vertical; }
+.row { display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn {
+  width:100%; border:none; border-radius:11px; padding:11px 12px; color:white;
+  font-weight: 700; background: linear-gradient(90deg, var(--accent), var(--accent-2)); cursor:pointer;
+}
+.btn.alt { background:#374151; }
+.btn.ok { background:#166534; }
+.btn.warn { background:#92400e; }
+.hint { color:var(--muted); font-size:12px; margin-top: 6px; }
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  background:#12121b; border:1px solid var(--border); color:#ececf4;
+  padding:10px 12px; border-radius:10px; opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:40;
+}
+.toast.show { opacity: 1; }
