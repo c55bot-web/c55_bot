@@ -205,13 +205,31 @@ async def zv_dorm_webapp_submit(message: Message, state: FSMContext, bot: Bot):
     if not (_is_valid_date(date_from) and _is_valid_date(date_to) and _is_valid_time(time_from) and _is_valid_time(time_to)):
         return await message.answer("❌ Некоректна дата або час. Спробуйте ще раз у Mini App.")
 
-    payload_json = zv_payload(date_from, time_from, date_to, time_to, reason="MiniApp", address="")
+    address_mode = str(payload.get("address_mode", "db")).strip().lower()
+    address_manual = str(payload.get("address", "")).strip()
+    reason = str(payload.get("reason", "")).strip()
+
+    if not reason:
+        return await message.answer("❌ Вкажіть причину звільнення у Mini App.")
+
     async with async_session() as session:
         user = await session.get(User, message.from_user.id)
         if not user:
             return await message.answer("Вас немає в базі. Напишіть /start.")
+        if address_mode == "db":
+            address = (user.address or "").strip()
+            if not address:
+                return await message.answer("❌ У профілі немає адреси. Оберіть ручний ввід адреси у Mini App.")
+        elif address_mode == "manual":
+            if not address_manual:
+                return await message.answer("❌ Введіть адресу вручну у Mini App.")
+            address = address_manual
+        else:
+            return await message.answer("❌ Некоректне джерело адреси у Mini App.")
 
+    payload_json = zv_payload(date_from, time_from, date_to, time_to, reason=reason, address=address)
     await add_approval_request(message.from_user.id, "zv_dorm", new_val=payload_json)
+    await update_user_last_zv_reason(message.from_user.id, reason)
     await notify_admins_about_request(bot, user.full_name)
     await state.clear()
     await message.answer("✅ Запит на Зв з гуртожитку надіслано адміністраторам.")

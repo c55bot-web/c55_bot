@@ -8,8 +8,13 @@
     body { font-family: Arial, sans-serif; margin: 16px; background: #0f172a; color: #e2e8f0; }
     .card { background: #111827; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
     label { display: block; margin: 8px 0 6px; font-size: 14px; color: #cbd5e1; }
-    input { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid #334155; background: #0b1220; color: #e2e8f0; }
+    input, textarea { width: 100%; box-sizing: border-box; padding: 10px; border-radius: 10px; border: 1px solid #334155; background: #0b1220; color: #e2e8f0; }
+    textarea { min-height: 76px; resize: vertical; }
     button { width: 100%; margin-top: 12px; padding: 12px; border-radius: 10px; border: none; font-size: 16px; font-weight: 700; background: #2563eb; color: white; }
+    .btn-muted { background: #334155; }
+    .btn-toggle.active { background: #16a34a; }
+    .hidden { display: none; }
+    .panel { margin-top: 10px; padding: 10px; border: 1px solid #334155; border-radius: 10px; background: #0b1220; }
     h2 { margin: 0 0 8px 0; }
     .hint { font-size: 12px; color: #94a3b8; margin-top: 8px; }
   </style>
@@ -25,6 +30,18 @@
     <input id="date_to" type="date" required />
     <label for="time_to">Час завершення</label>
     <input id="time_to" type="time" required />
+
+    <button id="addressFromDbBtn" class="btn-toggle active" type="button">📍 Взяти адресу з профілю (БД)</button>
+    <button id="addressManualBtn" class="btn-toggle btn-muted" type="button">✏️ Ввести адресу вручну</button>
+    <div id="addressPanel" class="panel hidden">
+      <label for="address_input">Адреса</label>
+      <input id="address_input" type="text" placeholder="Введіть адресу звільнення" />
+    </div>
+
+    <label for="reason_input">Причина звільнення</label>
+    <textarea id="reason_input" placeholder="Напишіть причину"></textarea>
+    <button id="useLastReasonBtn" class="btn-muted" type="button">♻️ Використати останню причину</button>
+
     <button id="submitBtn">Надіслати</button>
     <div class="hint">Після натискання дані відправляться в бот.</div>
   </div>
@@ -43,7 +60,16 @@
     const timeFrom = document.getElementById("time_from");
     const dateTo = document.getElementById("date_to");
     const timeTo = document.getElementById("time_to");
+    const addressFromDbBtn = document.getElementById("addressFromDbBtn");
+    const addressManualBtn = document.getElementById("addressManualBtn");
+    const addressPanel = document.getElementById("addressPanel");
+    const addressInput = document.getElementById("address_input");
+    const reasonInput = document.getElementById("reason_input");
+    const useLastReasonBtn = document.getElementById("useLastReasonBtn");
     const submitBtn = document.getElementById("submitBtn");
+    const LAST_REASON_KEY = "zv_dorm_last_reason";
+
+    let addressMode = "db";
 
     dateFrom.value = toDate(now);
     timeFrom.value = toTime(now);
@@ -51,9 +77,49 @@
     dateTo.value = toDate(end);
     timeTo.value = toTime(end);
 
+    const lastReason = window.localStorage.getItem(LAST_REASON_KEY) || "";
+    if (lastReason) {
+      useLastReasonBtn.textContent = "♻️ Використати останню причину";
+    } else {
+      useLastReasonBtn.textContent = "♻️ Немає збереженої причини";
+      useLastReasonBtn.disabled = true;
+      useLastReasonBtn.style.opacity = "0.6";
+    }
+
+    function setAddressMode(mode) {
+      addressMode = mode;
+      const useDb = mode === "db";
+      addressFromDbBtn.classList.toggle("active", useDb);
+      addressFromDbBtn.classList.toggle("btn-muted", !useDb);
+      addressManualBtn.classList.toggle("active", !useDb);
+      addressManualBtn.classList.toggle("btn-muted", useDb);
+      addressPanel.classList.toggle("hidden", useDb);
+    }
+
+    addressFromDbBtn.addEventListener("click", () => setAddressMode("db"));
+    addressManualBtn.addEventListener("click", () => setAddressMode("manual"));
+    useLastReasonBtn.addEventListener("click", () => {
+      const val = window.localStorage.getItem(LAST_REASON_KEY) || "";
+      if (!val) {
+        tg.showAlert("Немає збереженої причини.");
+        return;
+      }
+      reasonInput.value = val;
+    });
+
     submitBtn.addEventListener("click", () => {
       if (!dateFrom.value || !timeFrom.value || !dateTo.value || !timeTo.value) {
         tg.showAlert("Заповніть дату і час початку/завершення.");
+        return;
+      }
+      const reason = (reasonInput.value || "").trim();
+      if (!reason) {
+        tg.showAlert("Введіть причину звільнення.");
+        return;
+      }
+      const address = (addressInput.value || "").trim();
+      if (addressMode === "manual" && !address) {
+        tg.showAlert("Введіть адресу або оберіть адресу з профілю.");
         return;
       }
       const data = {
@@ -61,8 +127,12 @@
         date_from: dateFrom.value,
         time_from: timeFrom.value,
         date_to: dateTo.value,
-        time_to: timeTo.value
+        time_to: timeTo.value,
+        address_mode: addressMode,
+        address,
+        reason
       };
+      window.localStorage.setItem(LAST_REASON_KEY, reason);
       tg.sendData(JSON.stringify(data));
       tg.close();
     });
