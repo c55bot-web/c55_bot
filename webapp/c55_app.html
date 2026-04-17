@@ -4,32 +4,19 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417e" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417f" />
 </head>
 <body>
-  <div class="app">
-    <div class="top">
-      <div>
-        <div class="title">C55 Web App</div>
-        <div class="subtitle">Єдина панель взаємодії (beta)</div>
-      </div>
-      <div class="pill">dark violet</div>
-    </div>
-
-    <div class="grid">
-      <div class="card" id="openHub">
-        <h3>🌐 Відкрити C55 панель</h3>
-        <p>Єдиний вхід: курсант + адмін. Адмін-дії захищені на бекенді.</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="drawer-wrap" id="studentDrawerWrap">
+  <div class="drawer-wrap open" id="mainWrap">
     <div class="drawer">
       <div class="drawer-head">
-        <div class="drawer-title">🎓 Панель курсанта</div>
+        <div class="drawer-title">🌐 C55 Web App</div>
       </div>
       <div class="menu">
+        <button data-panel="pAdminStats" class="admin-only">⚙️ Адмін: Огляд і статистика</button>
+        <button data-panel="pAdminApprovals" class="admin-only">✅ Адмін: Масове погодження</button>
+        <button data-panel="pAdminAutomation" class="admin-only">🤖 Адмін: Автофункції</button>
+        <button data-panel="pAdminOps" class="admin-only">🛠 Адмін: Операції</button>
         <button data-panel="pProfile">👤 Мій профіль</button>
         <button data-panel="pProfileEdit">✏️ Запит на зміну профілю</button>
         <button data-panel="pZvCity">🏙 Подати З/В у місто</button>
@@ -132,33 +119,19 @@
         <div class="field"><label class="label">Варіанти (кожен з нового рядка)</label><textarea id="pollOpts" placeholder="Варіант 1&#10;Варіант 2"></textarea></div>
         <button class="btn" id="pollBtn">Створити голосування</button>
       </div>
-    </div>
-  </div>
 
-  <div class="drawer-wrap" id="adminDrawerWrap">
-    <div class="drawer">
-      <div class="drawer-head">
-        <div class="drawer-title">⚙️ Панель адміністратора</div>
-      </div>
-      <div class="menu">
-        <button data-panel="aStats">📊 Огляд і статистика</button>
-        <button data-panel="aApprovals">✅ Масове погодження</button>
-        <button data-panel="aAutomation">🤖 Автофункції</button>
-        <button data-panel="aBroadcast">📣 Сповіщення</button>
-      </div>
-
-      <div class="panel" id="aStats">
+      <div class="panel admin-only" id="pAdminStats">
         <button class="btn alt" id="adminStatsBtn">Оновити статистику в чаті</button>
-        <div class="hint">Бот надішле поточний стан заявок і системних перемикачів.</div>
+        <button class="btn alt" id="adminRequestsOverviewBtn">Показати запити по курсантам</button>
+        <button class="btn alt" id="adminCityReportBtn">Звіт по З/В у місто</button>
       </div>
 
-      <div class="panel" id="aApprovals">
+      <div class="panel admin-only" id="pAdminApprovals">
         <button class="btn ok" id="approveAllCityBtn">Погодити всі З/В у місто</button>
         <button class="btn ok" id="approveAllDormBtn">Погодити всі З/В з гуртожитку</button>
-        <div class="hint">Працює тільки для адмінів, перевіряється на бекенді.</div>
       </div>
 
-      <div class="panel" id="aAutomation">
+      <div class="panel admin-only" id="pAdminAutomation">
         <div class="field">
           <label class="label">Авто-функція</label>
           <select id="adminToggleKey">
@@ -173,9 +146,10 @@
         <button class="btn warn" id="adminToggleBtn">Перемкнути ON/OFF</button>
       </div>
 
-      <div class="panel" id="aBroadcast">
+      <div class="panel admin-only" id="pAdminOps">
         <button class="btn" id="adminPingBtn">Пінгнути всіх (@username)</button>
-        <div class="hint">Надішле згадку всіх курсантів у службову гілку.</div>
+        <button class="btn warn" id="adminPollsListBtn">Список активних опитувань</button>
+        <button class="btn warn" id="adminClosePollsBtn">Закрити всі активні опитування</button>
       </div>
     </div>
   </div>
@@ -183,6 +157,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417e"></script>
+  <script src="./c55_app.js?v=20260417f"></script>
 </body>
 </html>

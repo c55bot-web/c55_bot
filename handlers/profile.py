@@ -21,7 +21,8 @@ from database.requests import (
     notify_admins_about_request, get_approval_by_id, add_approval_correspondence,
     get_distance_learning, get_subject_text, check_schedule_has_classrooms, update_user_last_zv_reason,
     get_pending_approvals_count, get_users_count, get_users_with_requests_by_types,
-    get_approvals_by_type, process_approval, toggle_setting, get_all_settings
+    get_approvals_by_type, process_approval, toggle_setting, get_all_settings,
+    get_active_polls, close_poll_in_db, get_users_with_requests
 )
 from database.models import User
 from core.zv_helpers import zv_payload
@@ -43,7 +44,7 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417e"
+    qs["v"] = "20260417f"
     qs["is_admin"] = "1" if is_admin else "0"
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
@@ -207,6 +208,58 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
                 return await message.answer("⚠️ Немає курсантів з username у базі.")
             await bot.send_message(chat_id=GROUP_CHAT_ID, message_thread_id=MESSAGE_THREAD_ID, text=text)
             return await message.answer("🔔 Усіх пропінговано в групі.")
+
+        if action == "admin_city_report":
+            apps = await get_approvals_by_type("zv_city")
+            if not apps:
+                return await message.answer("ℹ️ Немає активних подань у З/В у місто.")
+            per_day: dict[str, int] = {}
+            for app in apps:
+                day = (app.created_at.strftime("%d.%m.%Y") if app.created_at else "невідомо")
+                per_day[day] = per_day.get(day, 0) + 1
+            lines = ["🏙 <b>Звіт по поданнях у З/В у місто</b>", ""]
+            for day, count in sorted(per_day.items()):
+                lines.append(f"• {day}: <b>{count}</b>")
+            lines.append("")
+            lines.append(f"Разом: <b>{len(apps)}</b>")
+            return await message.answer("\n".join(lines), parse_mode="HTML")
+
+        if action == "admin_requests_overview":
+            users = await get_users_with_requests()
+            if not users:
+                return await message.answer("✅ Немає курсантів з активними запитами.")
+            lines = ["📋 <b>Курсанти з активними запитами</b>", ""]
+            for name, cnt in users[:40]:
+                lines.append(f"• {name}: <b>{cnt}</b>")
+            if len(users) > 40:
+                lines.append(f"\n… і ще {len(users) - 40} курсант(ів)")
+            return await message.answer("\n".join(lines), parse_mode="HTML")
+
+        if action == "admin_polls_list":
+            polls = await get_active_polls()
+            if not polls:
+                return await message.answer("ℹ️ Активних опитувань немає.")
+            lines = ["🗳 <b>Активні опитування</b>", ""]
+            for p in polls[:25]:
+                created = p.created_at.strftime("%d.%m %H:%M") if p.created_at else "?"
+                lines.append(f"• {p.type} | id: <code>{p.tg_poll_id}</code> | {created}")
+            if len(polls) > 25:
+                lines.append(f"\n… і ще {len(polls) - 25}")
+            return await message.answer("\n".join(lines), parse_mode="HTML")
+
+        if action == "admin_close_all_polls":
+            polls = await get_active_polls()
+            if not polls:
+                return await message.answer("ℹ️ Активних опитувань немає.")
+            closed = 0
+            for p in polls:
+                try:
+                    await bot.stop_poll(chat_id=p.chat_id, message_id=p.message_id)
+                except Exception:
+                    pass
+                await close_poll_in_db(p.tg_poll_id)
+                closed += 1
+            return await message.answer(f"🛑 Закрито опитувань: <b>{closed}</b>", parse_mode="HTML")
 
         return await message.answer("ℹ️ Невідома дія адмін-панелі.")
 
