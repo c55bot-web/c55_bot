@@ -272,6 +272,26 @@ async def get_approvals_by_type(req_type: str):
         stmt = select(Approval).where(Approval.type == req_type).order_by(Approval.created_at.asc())
         return (await session.execute(stmt)).scalars().all()
 
+async def cleanup_duplicate_approvals(req_type: str) -> int:
+    """
+    Видаляє дублікати запитів одного типу для одного користувача.
+    Залишаємо найстаріший запит (по created_at), решту видаляємо.
+    """
+    removed = 0
+    async with async_session() as session:
+        stmt = select(Approval).where(Approval.type == req_type).order_by(Approval.user_id.asc(), Approval.created_at.asc(), Approval.id.asc())
+        rows = (await session.execute(stmt)).scalars().all()
+        seen_users: set[int] = set()
+        for app in rows:
+            if app.user_id in seen_users:
+                await session.delete(app)
+                removed += 1
+            else:
+                seen_users.add(app.user_id)
+        if removed:
+            await session.commit()
+    return removed
+
 async def delete_approval(app_id: int):
     async with async_session() as session:
         app = await session.get(Approval, app_id)

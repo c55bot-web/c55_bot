@@ -23,7 +23,8 @@ from database.requests import (
     get_distance_learning, get_subject_text, check_schedule_has_classrooms, update_user_last_zv_reason,
     get_pending_approvals_count, get_users_count, get_users_with_requests_by_types,
     get_approvals_by_type, process_approval, toggle_setting, get_all_settings,
-    get_active_polls, close_poll_in_db, get_users_with_requests, get_closed_polls_history
+    get_active_polls, close_poll_in_db, get_users_with_requests, get_closed_polls_history,
+    get_requests_by_user_and_types, cleanup_duplicate_approvals
 )
 from database.models import User
 from core.zv_helpers import zv_payload
@@ -211,6 +212,7 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
             return await message.answer("🔔 Усіх пропінговано в групі.")
 
         if action == "admin_city_report":
+            await cleanup_duplicate_approvals("zv_city")
             apps = await get_approvals_by_type("zv_city")
             if not apps:
                 return await message.answer("ℹ️ Немає активних подань у З/В у місто.")
@@ -222,7 +224,7 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
                     if not u:
                         continue
                     num = u.list_number if u.list_number is not None else 999
-                    label = f"{u.list_number if u.list_number is not None else '?'} — {u.full_name}"
+                    label = f"- {u.full_name}"
                     if num <= 14:
                         first_dep.append((num, label))
                     else:
@@ -372,6 +374,10 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
         return await message.answer("✅ Ваш запит надіслано адміністраторам.")
 
     if action == "zv_city_submit":
+        await cleanup_duplicate_approvals("zv_city")
+        existing = await get_requests_by_user_and_types(message.from_user.id, ["zv_city"])
+        if existing:
+            return await message.answer("ℹ️ Ви вже подали себе у З/В у місто. Дублювати заявку не потрібно.")
         await add_approval_request(message.from_user.id, "zv_city", new_val="{}")
         await notify_admins_about_request(bot, user_name)
         return await message.answer("✅ Подання у Зв у місто надіслано.")
