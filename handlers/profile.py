@@ -46,7 +46,7 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417s"
+    qs["v"] = "20260417t"
     qs["is_admin"] = "1" if is_admin else "0"
     if C55_WEBAPP_API_URL:
         qs["api"] = C55_WEBAPP_API_URL

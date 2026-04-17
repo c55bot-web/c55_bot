@@ -38,6 +38,67 @@ const sendAction = (kind, action, payload = {}) => {
   showToast("Відправлено");
 };
 
+const INIT_DATA_STORAGE_KEY = "c55_tg_init_data";
+
+const decodeURIComponentSafe = (s) => {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+};
+
+/** Повертає сирий initData рядок для валідації на бекенді (підпис hash). */
+const getTelegramInitData = () => {
+  const w = window.Telegram?.WebApp;
+  const direct = (w && w.initData) ? String(w.initData) : "";
+  if (direct) {
+    try {
+      sessionStorage.setItem(INIT_DATA_STORAGE_KEY, direct);
+    } catch {
+      // ignore
+    }
+    return direct;
+  }
+
+  const cached = (() => {
+    try {
+      return sessionStorage.getItem(INIT_DATA_STORAGE_KEY) || "";
+    } catch {
+      return "";
+    }
+  })();
+  if (cached) return cached;
+
+  const parseFromHashOrSearch = (raw) => {
+    if (!raw) return "";
+    const trimmed = raw.startsWith("#") ? raw.slice(1) : raw;
+    const hp = new URLSearchParams(trimmed);
+    const embedded = hp.get("tgWebAppData");
+    if (embedded) return decodeURIComponentSafe(embedded);
+    // Інколи initData приходить як «query string» прямо у фрагменті без ключа tgWebAppData
+    if (trimmed.includes("hash=") && trimmed.includes("user=")) return trimmed;
+    return "";
+  };
+
+  let v = parseFromHashOrSearch(window.location.hash);
+  if (!v) {
+    v = (() => {
+      const sp = new URLSearchParams(window.location.search);
+      const embedded = sp.get("tgWebAppData");
+      return embedded ? decodeURIComponentSafe(embedded) : "";
+    })();
+  }
+  if (v) {
+    try {
+      sessionStorage.setItem(INIT_DATA_STORAGE_KEY, v);
+    } catch {
+      // ignore
+    }
+  }
+  return v;
+};
+
 const fetchAdminHistory = async () => {
   const box = document.getElementById("adminHistoryResult");
   if (!API_BASE) {
@@ -48,9 +109,14 @@ const fetchAdminHistory = async () => {
     }
     return tg.showAlert("Не налаштовано C55_WEBAPP_API_URL (API для WebApp). Без цього Telegram завжди закриє app на sendData().");
   }
-  const initData = tg.initData || "";
+  const initData = getTelegramInitData();
   if (!initData) {
-    return tg.showAlert("Немає Telegram initData — відкрий Web App через кнопку в Telegram.");
+    return tg.showAlert(
+      "Немає Telegram initData.\n\n" +
+        "Відкрий Web App саме кнопкою в Telegram (Reply keyboard).\n" +
+        "Якщо все одно порожньо — зроби /refresh і відкрий ще раз.\n\n" +
+        "RU: Нет initData — открой Mini App кнопкой в Telegram, затем /refresh."
+    );
   }
   if (box) box.textContent = "Завантаження...";
   try {
@@ -175,7 +241,7 @@ bindClick("schShowBtn", async () => {
   if (!box) return;
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417s`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417t`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -261,7 +327,7 @@ bindClick("adminSchShowBtn", async () => {
   if (!box) return;
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417s`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417t`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
