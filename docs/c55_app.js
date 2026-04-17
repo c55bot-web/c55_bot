@@ -5,7 +5,9 @@ tg.expand();
 const LAST_REASON_KEY = "c55_last_zv_reason";
 const drawerWrap = document.getElementById("studentDrawerWrap");
 const toast = document.getElementById("toast");
-const launchMode = new URLSearchParams(window.location.search).get("mode") || "student";
+const ADMIN_IDS = new Set([1412535952, 1968855371, 857180040, 1023209296]);
+const userId = tg.initDataUnsafe?.user?.id || 0;
+const isAdmin = ADMIN_IDS.has(Number(userId));
 const now = new Date();
 const toDate = (d) => d.toISOString().slice(0, 10);
 const toTime = (d) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -22,6 +24,14 @@ const sendAction = (action, payload = {}) => {
 };
 
 document.getElementById("openStudent").onclick = () => drawerWrap.classList.add("open");
+document.querySelector(".card.admin").onclick = () => {
+  if (!isAdmin) {
+    tg.showAlert("Адмін-панель доступна лише адміністраторам.");
+    return;
+  }
+  drawerWrap.classList.add("open");
+  showToast("Адмін-режим скоро буде доданий.");
+};
 document.getElementById("closeDrawer").onclick = () => drawerWrap.classList.remove("open");
 drawerWrap.addEventListener("click", (e) => { if (e.target === drawerWrap) drawerWrap.classList.remove("open"); });
 
@@ -40,12 +50,7 @@ document.querySelectorAll(".menu button[data-panel]").forEach(btn => {
 });
 const firstMenuBtn = document.querySelector(".menu button[data-panel]");
 openPanel("pProfile", firstMenuBtn);
-
-if (launchMode === "student") {
-  drawerWrap.classList.add("open");
-} else if (launchMode === "admin") {
-  showToast("Адмін-панель буде підключена наступним етапом.");
-}
+drawerWrap.classList.add("open");
 
 document.getElementById("df").value = toDate(now);
 document.getElementById("tf").value = toTime(now);
@@ -83,11 +88,32 @@ document.getElementById("zvDormBtn").onclick = () => {
   localStorage.setItem(LAST_REASON_KEY, reason);
   sendAction("zv_dorm_submit", { date_from, time_from, date_to, time_to, address_mode, address, reason });
 };
-document.getElementById("schSendBtn").onclick = () => {
-  sendAction("schedule_to_chat", {
-    week: document.getElementById("schWeek").value,
-    day: document.getElementById("schDay").value
-  });
+document.getElementById("schShowBtn").onclick = async () => {
+  const week = document.getElementById("schWeek").value;
+  const day = document.getElementById("schDay").value;
+  const box = document.getElementById("scheduleResult");
+  box.textContent = "Завантаження...";
+  try {
+    const resp = await fetch(`./schedule_cache.json?v=20260417c`, { cache: "no-store" });
+    if (!resp.ok) throw new Error("cache-miss");
+    const cache = await resp.json();
+    const key = week === "next" ? "next" : "current";
+    const dayRows = (cache?.[key] || {})[day] || [];
+    if (!dayRows.length) {
+      box.textContent = `На ${day} пар немає.`;
+      return;
+    }
+    const header = cache?.meta?.week_labels?.[key] || (key === "next" ? "Наступний тиждень" : "Поточний тиждень");
+    const lines = [`${header}, ${day}`];
+    for (const row of dayRows) {
+      const pair = row.pair_num ?? "?";
+      const text = row.lesson_text || "";
+      lines.push(`${pair} пара: ${text}`);
+    }
+    box.textContent = lines.join("\n");
+  } catch (e) {
+    box.textContent = "Не вдалося завантажити розклад. Спробуйте пізніше.";
+  }
 };
 document.getElementById("customReqBtn").onclick = () => {
   const text = document.getElementById("customReqText").value.trim();

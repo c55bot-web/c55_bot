@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417b" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417c" />
 </head>
 <body>
   <div class="app">
@@ -39,7 +39,7 @@
         <button data-panel="pProfileEdit">✏️ Запит на зміну профілю</button>
         <button data-panel="pZvCity">🏙 Подати З/В у місто</button>
         <button data-panel="pZvDorm">🏠 Подати З/В з гуртожитку</button>
-        <button data-panel="pSchedule">📅 Розклад (надіслати в чат)</button>
+        <button data-panel="pSchedule">📅 Розклад (на сайті)</button>
         <button data-panel="pCustomReq">📝 Свій запит</button>
         <button data-panel="pCustomPoll">🗳 Власне голосування</button>
       </div>
@@ -120,7 +120,8 @@
             </select>
           </div>
         </div>
-        <button class="btn warn" id="schSendBtn">Надіслати розклад у чат</button>
+        <button class="btn warn" id="schShowBtn">Показати розклад на сайті</button>
+        <div id="scheduleResult" class="schedule-result"></div>
       </div>
 
       <div class="panel" id="pCustomReq">
@@ -142,6 +143,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417b"></script>
+  <script src="./c55_app.js?v=20260417c"></script>
 </body>
 </html>

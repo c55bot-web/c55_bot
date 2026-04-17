@@ -35,15 +35,14 @@ def is_owner(callback: CallbackQuery) -> bool:
     return not owner_id or owner_id == callback.from_user.id
 
 
-def _c55_webapp_url(mode: str) -> str:
-    """Повертає URL WebApp з query-параметром mode=student|admin."""
+def _c55_webapp_url() -> str:
+    """Повертає URL WebApp з cache-busting версією."""
     if not C55_WEBAPP_URL:
         return ""
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
-    qs["mode"] = mode
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417b"
+    qs["v"] = "20260417c"
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
 
@@ -71,7 +70,6 @@ EDIT_PROMPTS = {
 @router.message(F.text == "🎓 Панель курсанта")
 async def student_panel_cmd(message: Message, state: FSMContext):
     await state.clear()
-    is_admin = await check_is_admin(message.from_user.id)
     if not C55_WEBAPP_URL:
         msg = await message.answer(
             "🎓 <b>Панель курсанта</b>\nОберіть потрібний розділ:",
@@ -81,17 +79,13 @@ async def student_panel_cmd(message: Message, state: FSMContext):
         MENU_OWNERS[msg.message_id] = message.from_user.id
         return
     await message.answer(
-        "🎓 <b>C55 Web App</b>\nНатисніть кнопку <b>під полем вводу</b>, щоб відкрити єдину панель курсанта.",
+        "🌐 <b>C55 Web App</b>\nНатисніть кнопку <b>під полем вводу</b>, щоб відкрити єдину панель (курсант/адмін).",
         parse_mode="HTML",
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=(
-                [[KeyboardButton(text="🎓 Відкрити C55 Student Web App", web_app=WebAppInfo(url=_c55_webapp_url("student")))]]
-                + (
-                    [[KeyboardButton(text="⚙️ Відкрити C55 Admin Web App", web_app=WebAppInfo(url=_c55_webapp_url("admin")))]]
-                    if is_admin else []
-                )
-                + [[KeyboardButton(text="❌ Закрити C55 Web клавіатуру")]]
-            ),
+            keyboard=[
+                [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=_c55_webapp_url()))],
+                [KeyboardButton(text="❌ Закрити C55 Web клавіатуру")],
+            ],
             resize_keyboard=True,
             one_time_keyboard=True,
         ),
@@ -101,7 +95,6 @@ async def student_panel_cmd(message: Message, state: FSMContext):
 async def student_panel_inline(callback: CallbackQuery, state: FSMContext):
     if not is_owner(callback): return await callback.answer("❌ Це меню викликав інший користувач!", show_alert=True)
     await state.clear()
-    is_admin = await check_is_admin(callback.from_user.id)
     if C55_WEBAPP_URL:
         await callback.message.edit_text(
             "🎓 <b>C55 Web App</b>\nНатисніть кнопку нижче поля вводу: <b>🌐 Відкрити C55 Web App</b>.",
@@ -111,14 +104,10 @@ async def student_panel_inline(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer(
             "⬇️ Кнопка відкриття C55 Web App:",
             reply_markup=ReplyKeyboardMarkup(
-                keyboard=(
-                    [[KeyboardButton(text="🎓 Відкрити C55 Student Web App", web_app=WebAppInfo(url=_c55_webapp_url("student")))]]
-                    + (
-                        [[KeyboardButton(text="⚙️ Відкрити C55 Admin Web App", web_app=WebAppInfo(url=_c55_webapp_url("admin")))]]
-                        if is_admin else []
-                    )
-                    + [[KeyboardButton(text="❌ Закрити C55 Web клавіатуру")]]
-                ),
+                keyboard=[
+                    [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=_c55_webapp_url()))],
+                    [KeyboardButton(text="❌ Закрити C55 Web клавіатуру")],
+                ],
                 resize_keyboard=True,
                 one_time_keyboard=True,
             ),

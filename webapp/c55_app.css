@@ -37,7 +37,7 @@ body {
 .card:hover { transform: translateY(-1px); box-shadow: 0 10px 25px rgba(0,0,0,.25); border-color: #4c3a76; }
 .card h3 { margin: 0 0 6px 0; font-size: 16px; }
 .card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.35; }
-.card.admin { opacity: .62; cursor: not-allowed; }
+.card.admin { opacity: .9; }
 .drawer-wrap {
   position: fixed; inset: 0; display: none; z-index: 20;
   background: rgba(8, 8, 12, .55); backdrop-filter: blur(2px);
@@ -94,6 +94,16 @@ textarea { min-height: 90px; resize: vertical; }
 .btn.ok { background:#166534; }
 .btn.warn { background:#92400e; }
 .hint { color:var(--muted); font-size:12px; margin-top: 6px; }
+.schedule-result {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 48px;
+  white-space: pre-line;
+  color: #ddddef;
+  background: #10101a;
+}
 .toast {
   position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
   background:#12121b; border:1px solid var(--border); color:#ececf4;
