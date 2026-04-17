@@ -17,11 +17,25 @@ const showToast = (text) => {
   toast.classList.add("show");
   setTimeout(() => toast.classList.remove("show"), 1800);
 };
-const sendAction = (kind, action, payload = {}) => {
+const sendAction = (kind, action, payload = {}, requireConfirm = true) => {
   const body = { kind, action, ...payload };
-  tg.sendData(JSON.stringify(body));
-  if (tg.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred("success");
-  showToast("Відправлено");
+  const doSend = () => {
+    tg.sendData(JSON.stringify(body));
+    if (tg.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred("success");
+    showToast("Відправлено");
+  };
+  if (!requireConfirm) {
+    doSend();
+    return;
+  }
+  const confirmText = "Надіслати дію в бот? Після надсилання Telegram може закрити Web App.";
+  if (typeof tg.showConfirm === "function") {
+    tg.showConfirm(confirmText, (ok) => {
+      if (ok) doSend();
+    });
+    return;
+  }
+  if (window.confirm(confirmText)) doSend();
 };
 
 const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
