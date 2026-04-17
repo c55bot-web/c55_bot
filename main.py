@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
@@ -10,7 +10,17 @@ from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Імпорт налаштувань та клавіатур
-from core.config import BOT_TOKEN, GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG, C55_WEBAPP_URL
+from core.config import (
+    BOT_TOKEN,
+    GROUP_CHAT_ID,
+    MESSAGE_THREAD_ID,
+    SCHEDULE_THREAD_ID,
+    POLLS_CONFIG,
+    C55_WEBAPP_URL,
+    C55_WEBAPP_API_URL,
+    C55_WEBAPP_API_HOST,
+    C55_WEBAPP_API_PORT,
+)
 from core.keyboards import get_reply_kb
 from core.bot_commands import setup_bot_commands, build_help_text
 
@@ -40,8 +50,11 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
         return ""
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
-    qs["v"] = "20260417q"
+    qs["v"] = "20260417r"
     qs["is_admin"] = "1" if is_admin else "0"
+    if C55_WEBAPP_API_URL:
+        # query param must stay ASCII-safe; URL itself is percent-encoded
+        qs["api"] = quote(C55_WEBAPP_API_URL, safe="")
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(qs), parts.fragment))
 
 
@@ -217,6 +230,15 @@ async def main():
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
     dp = Dispatcher()
 
+    webapp_api_runner = None
+    if C55_WEBAPP_API_URL:
+        try:
+            from webapp_api import start_site
+
+            webapp_api_runner = await start_site(C55_WEBAPP_API_HOST, C55_WEBAPP_API_PORT)
+        except Exception as e:
+            logging.error("Не вдалося запустити C55 WebApp API: %s", e)
+
     @dp.message(Command("start"))
     async def cmd_start(message: Message):
         user = message.from_user
@@ -300,7 +322,14 @@ async def main():
         logging.error(f"Не вдалося зареєструвати команди в Telegram: {e}")
     
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    try:
+        await dp.start_polling(bot)
+    finally:
+        if webapp_api_runner is not None:
+            try:
+                await webapp_api_runner.cleanup()
+            except Exception:
+                pass
 
 if __name__ == "__main__":
     asyncio.run(main())

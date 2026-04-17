@@ -18,6 +18,13 @@ ZV_DORM_WEBAPP_URL = os.getenv("ZV_DORM_WEBAPP_URL", "").strip()
 # Єдиний URL C55 Web App (якщо не задано — використовуємо ZV_DORM_WEBAPP_URL)
 C55_WEBAPP_URL = os.getenv("C55_WEBAPP_URL", ZV_DORM_WEBAPP_URL).strip()
 
+# Публічний HTTPS endpoint для Mini App API (не github.io). Потрібен, щоб WebApp міг робити fetch без tg.sendData.
+C55_WEBAPP_API_URL = os.getenv("C55_WEBAPP_API_URL", "").strip().rstrip("/")
+# aiohttp слухач для API (зазвичай за nginx TLS reverse-proxy)
+C55_WEBAPP_API_HOST = os.getenv("C55_WEBAPP_API_HOST", "127.0.0.1").strip()
+_c55_api_port = os.getenv("C55_WEBAPP_API_PORT", "8787").strip()
+C55_WEBAPP_API_PORT = int(_c55_api_port) if _c55_api_port.isdigit() else 8787
+
 ADMIN_IDS = [int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip().isdigit()]
 
 # Чат для сповіщень про нові запити (якщо не вказано — перший адмін)

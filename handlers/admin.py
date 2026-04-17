@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import pdfplumber
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 from datetime import datetime, timedelta
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
@@ -29,7 +29,7 @@ from core.keyboards import (
     get_approval_action_kb,
     get_schedule_kb
 )
-from core.config import GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG, POLL_DISPLAY_NAMES, MENU_OWNERS, C55_WEBAPP_URL
+from core.config import GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG, POLL_DISPLAY_NAMES, MENU_OWNERS, C55_WEBAPP_URL, C55_WEBAPP_API_URL
 from database.requests import (
     get_setting, toggle_setting, check_is_admin, save_new_poll, 
     get_active_polls, async_session,
@@ -53,8 +53,10 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
         return ""
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
-    qs["v"] = "20260417q"
+    qs["v"] = "20260417r"
     qs["is_admin"] = "1" if is_admin else "0"
+    if C55_WEBAPP_API_URL:
+        qs["api"] = quote(C55_WEBAPP_API_URL, safe="")
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(qs), parts.fragment))
 
 

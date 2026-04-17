@@ -1,7 +1,7 @@
 from aiogram import Router, F, Bot
 import json
 from datetime import datetime, timedelta
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 from aiogram.types import (
     Message,
@@ -16,7 +16,7 @@ from aiogram.filters import Command
 
 from core.states import EditUser, CustomPoll, CustomRequest, CustomRequestReply
 from core.keyboards import get_profile_kb, get_back_btn, get_schedule_kb, get_student_panel_kb
-from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAPP_URL, POLLS_CONFIG, POLL_DISPLAY_NAMES
+from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAPP_URL, C55_WEBAPP_API_URL, POLLS_CONFIG, POLL_DISPLAY_NAMES
 from database.requests import (
     async_session, check_is_admin, add_approval_request, backup_user_to_json, get_schedule_by_day, save_new_poll, get_setting,
     notify_admins_about_request, get_approval_by_id, add_approval_correspondence,
@@ -46,8 +46,10 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417q"
+    qs["v"] = "20260417r"
     qs["is_admin"] = "1" if is_admin else "0"
+    if C55_WEBAPP_API_URL:
+        qs["api"] = quote(C55_WEBAPP_API_URL, safe="")
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
 

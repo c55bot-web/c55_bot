@@ -9,6 +9,15 @@ const mainWrap = document.querySelector(".app");
 const toast = document.getElementById("toast");
 const params = new URLSearchParams(window.location.search);
 const isAdmin = params.get("is_admin") === "1";
+const apiBaseRaw = params.get("api") || "";
+let API_BASE = "";
+if (apiBaseRaw) {
+  try {
+    API_BASE = decodeURIComponent(apiBaseRaw).replace(/\/$/, "");
+  } catch {
+    API_BASE = apiBaseRaw.replace(/\/$/, "");
+  }
+}
 const now = new Date();
 const toDate = (d) => d.toISOString().slice(0, 10);
 const toTime = (d) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -27,6 +36,48 @@ const sendAction = (kind, action, payload = {}) => {
   tg.sendData(JSON.stringify(body));
   if (tg.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred("success");
   showToast("Відправлено");
+};
+
+const fetchAdminHistory = async () => {
+  const box = document.getElementById("adminHistoryResult");
+  if (!API_BASE) {
+    if (box) {
+      box.textContent =
+        "Щоб «Історія» не закривала Web App, потрібен HTTPS API endpoint.\n\n" +
+        "Додай у .env змінну C55_WEBAPP_API_URL (публічний URL до бота-API) і nginx/proxy на /api/c55/* → порт C55_WEBAPP_API_PORT.";
+    }
+    return tg.showAlert("Не налаштовано C55_WEBAPP_API_URL (API для WebApp). Без цього Telegram завжди закриє app на sendData().");
+  }
+  const initData = tg.initData || "";
+  if (!initData) {
+    return tg.showAlert("Немає Telegram initData — відкрий Web App через кнопку в Telegram.");
+  }
+  if (box) box.textContent = "Завантаження...";
+  try {
+    const url = `${API_BASE}/api/c55/admin/history`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Web-App-Init-Data": initData,
+      },
+      body: JSON.stringify({ limit_days: 7 }),
+      cache: "no-store",
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.ok) {
+      throw new Error(data.error || `http_${resp.status}`);
+    }
+    if (box) {
+      // HTML з бекенду — показуємо як plain text, щоб не XSS і не ламати Telegram WebView
+      const tmp = document.createElement("div");
+      tmp.innerHTML = String(data.text || "");
+      box.textContent = tmp.textContent || String(data.text || "");
+    }
+    showToast("Готово");
+  } catch (e) {
+    if (box) box.textContent = `Помилка завантаження історії: ${e?.message || e}`;
+  }
 };
 
 const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
@@ -124,7 +175,7 @@ bindClick("schShowBtn", async () => {
   if (!box) return;
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417q`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417r`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -185,7 +236,9 @@ bindClick("adminPollsListBtn", () => sendAction("c55_admin_webapp", "admin_polls
 bindClick("adminClosePollsBtn", () => sendAction("c55_admin_webapp", "admin_close_all_polls"));
 bindClick("adminUsersOverviewBtn", () => sendAction("c55_admin_webapp", "admin_users_overview"));
 bindClick("adminUsersListBtn", () => sendAction("c55_admin_webapp", "admin_users_list"));
-bindClick("adminHistoryRecentBtn", () => sendAction("c55_admin_webapp", "admin_history_recent"));
+bindClick("adminHistoryRecentBtn", () => {
+  void fetchAdminHistory();
+});
 bindClick("adminAutoStatusBtn", () => sendAction("c55_admin_webapp", "admin_auto_status"));
 document.querySelectorAll("#pAdminPollCreate [data-poll]").forEach((btn) => {
   btn.onclick = () => sendAction("c55_admin_webapp", "admin_create_poll", { poll_type: btn.dataset.poll });
@@ -208,7 +261,7 @@ bindClick("adminSchShowBtn", async () => {
   if (!box) return;
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417q`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417r`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
