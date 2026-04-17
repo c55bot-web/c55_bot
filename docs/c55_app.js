@@ -17,25 +17,11 @@ const showToast = (text) => {
   toast.classList.add("show");
   setTimeout(() => toast.classList.remove("show"), 1800);
 };
-const sendAction = (kind, action, payload = {}, requireConfirm = true) => {
+const sendAction = (kind, action, payload = {}) => {
   const body = { kind, action, ...payload };
-  const doSend = () => {
-    tg.sendData(JSON.stringify(body));
-    if (tg.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred("success");
-    showToast("Відправлено");
-  };
-  if (!requireConfirm) {
-    doSend();
-    return;
-  }
-  const confirmText = "Надіслати дію в бот? Після надсилання Telegram може закрити Web App.";
-  if (typeof tg.showConfirm === "function") {
-    tg.showConfirm(confirmText, (ok) => {
-      if (ok) doSend();
-    });
-    return;
-  }
-  if (window.confirm(confirmText)) doSend();
+  tg.sendData(JSON.stringify(body));
+  if (tg.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred("success");
+  showToast("Відправлено");
 };
 
 const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
@@ -81,6 +67,12 @@ if (openAdminScheduleBtn) openAdminScheduleBtn.onclick = () => {
   if (studentDrawerWrap) studentDrawerWrap.classList.add("open");
   studentOpenPanel("pSchedule");
 };
+const adminOpenCustomPollBtn = document.getElementById("adminOpenCustomPoll");
+if (adminOpenCustomPollBtn) adminOpenCustomPollBtn.onclick = () => {
+  if (adminDrawerWrap) adminDrawerWrap.classList.remove("open");
+  if (studentDrawerWrap) studentDrawerWrap.classList.add("open");
+  studentOpenPanel("pCustomPoll");
+};
 
 document.getElementById("df").value = toDate(now);
 document.getElementById("tf").value = toTime(now);
@@ -124,7 +116,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417k`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417l`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
