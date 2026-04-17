@@ -214,16 +214,30 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
             apps = await get_approvals_by_type("zv_city")
             if not apps:
                 return await message.answer("ℹ️ Немає активних подань у З/В у місто.")
-            per_day: dict[str, int] = {}
-            for app in apps:
-                day = (app.created_at.strftime("%d.%m.%Y") if app.created_at else "невідомо")
-                per_day[day] = per_day.get(day, 0) + 1
-            lines = ["🏙 <b>Звіт по поданнях у З/В у місто</b>", ""]
-            for day, count in sorted(per_day.items()):
-                lines.append(f"• {day}: <b>{count}</b>")
-            lines.append("")
-            lines.append(f"Разом: <b>{len(apps)}</b>")
-            return await message.answer("\n".join(lines), parse_mode="HTML")
+            async with async_session() as session:
+                first_dep: list[tuple[int, str]] = []
+                second_dep: list[tuple[int, str]] = []
+                for app in apps:
+                    u = await session.get(User, app.user_id)
+                    if not u:
+                        continue
+                    num = u.list_number if u.list_number is not None else 999
+                    label = f"{u.list_number if u.list_number is not None else '?'} — {u.full_name}"
+                    if num <= 14:
+                        first_dep.append((num, label))
+                    else:
+                        second_dep.append((num, label))
+            first_dep.sort(key=lambda x: (x[0], x[1]))
+            second_dep.sort(key=lambda x: (x[0], x[1]))
+            text = (
+                "🏙 <b>Звіт по поданнях у З/В у місто</b>\n\n"
+                "<b>1 відділення</b>\n"
+                + ("\n".join([x[1] for x in first_dep]) if first_dep else "—")
+                + "\n\n<b>2 відділення</b>\n"
+                + ("\n".join([x[1] for x in second_dep]) if second_dep else "—")
+                + f"\n\nРазом: <b>{len(first_dep) + len(second_dep)}</b>"
+            )
+            return await message.answer(text, parse_mode="HTML")
 
         if action == "admin_requests_overview":
             users = await get_users_with_requests()
