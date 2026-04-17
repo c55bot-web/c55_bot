@@ -116,7 +116,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417l`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417m`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -154,6 +154,7 @@ document.getElementById("pollBtn").onclick = () => {
   sendAction("c55_student_webapp", "custom_poll_submit", { question, options });
 };
 
+document.getElementById("adminOpenLegacyBtn").onclick = () => sendAction("c55_admin_webapp", "admin_open_legacy");
 document.getElementById("adminStatsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_stats");
 document.getElementById("adminRequestsOverviewBtn").onclick = () => sendAction("c55_admin_webapp", "admin_requests_overview");
 document.getElementById("adminCityReportBtn").onclick = () => sendAction("c55_admin_webapp", "admin_city_report");

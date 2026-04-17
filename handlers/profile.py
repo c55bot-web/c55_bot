@@ -15,7 +15,7 @@ from sqlalchemy import select
 from aiogram.filters import Command
 
 from core.states import EditUser, CustomPoll, CustomRequest, CustomRequestReply
-from core.keyboards import get_profile_kb, get_back_btn, get_schedule_kb, get_student_panel_kb
+from core.keyboards import get_profile_kb, get_back_btn, get_schedule_kb, get_student_panel_kb, get_main_menu_kb
 from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAPP_URL, POLLS_CONFIG, POLL_DISPLAY_NAMES
 from database.requests import (
     async_session, check_is_admin, add_approval_request, backup_user_to_json, get_schedule_by_day, save_new_poll, get_setting,
@@ -24,7 +24,7 @@ from database.requests import (
     get_pending_approvals_count, get_users_count, get_users_with_requests_by_types,
     get_approvals_by_type, process_approval, toggle_setting, get_all_settings,
     get_active_polls, close_poll_in_db, get_users_with_requests, get_closed_polls_history,
-    get_requests_by_user_and_types, cleanup_duplicate_approvals
+    get_requests_by_user_and_types, cleanup_duplicate_approvals, get_pending_approvals_count
 )
 from database.models import User
 from core.zv_helpers import zv_payload
@@ -46,7 +46,7 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417l"
+    qs["v"] = "20260417m"
     qs["is_admin"] = "1" if is_admin else "0"
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
@@ -165,6 +165,16 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
                 f"📅 Авто-розклад 20:00: <b>{'ON' if settings.get('auto_morning_schedule') else 'OFF'}</b>"
             )
             return await message.answer(text, parse_mode="HTML")
+
+        if action == "admin_open_legacy":
+            pending = await get_pending_approvals_count()
+            msg = await message.answer(
+                "⚙️ <b>Панель управління 0.45</b>\nОберіть дію:",
+                reply_markup=get_main_menu_kb(True, pending),
+                parse_mode="HTML",
+            )
+            MENU_OWNERS[msg.message_id] = message.from_user.id
+            return
 
         if action == "admin_confirm_all":
             category = str(payload.get("category", "")).strip()
