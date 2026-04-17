@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
@@ -22,6 +21,7 @@ from core.config import (
     C55_WEBAPP_API_PORT,
 )
 from core.keyboards import get_reply_kb
+from core.webapp_urls import reply_kb_webapp_urls
 from core.bot_commands import setup_bot_commands, build_help_text
 
 # Імпорт логіки бази даних
@@ -44,17 +44,6 @@ from handlers.options import router as options_router
 from handlers.sne import router as sne_router
 
 logging.basicConfig(level=logging.INFO)
-
-def _c55_webapp_url(is_admin: bool = False) -> str:
-    if not C55_WEBAPP_URL:
-        return ""
-    parts = urlsplit(C55_WEBAPP_URL)
-    qs = dict(parse_qsl(parts.query, keep_blank_values=True))
-    qs["v"] = "20260417t"
-    qs["is_admin"] = "1" if is_admin else "0"
-    if C55_WEBAPP_API_URL:
-        qs["api"] = C55_WEBAPP_API_URL
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(qs), parts.fragment))
 
 
 def _schedule_zv_cleanup():
@@ -243,9 +232,10 @@ async def main():
         user = message.from_user
         await add_or_update_user(user.id, user.full_name, user.username, update_existing=False)
         is_admin = await check_is_admin(user.id)
+        wa, wa045 = reply_kb_webapp_urls(is_admin=is_admin)
         await message.answer(
             f"Привіт, {user.full_name}! 👋\nТи успішно зареєстрований у базі.\n\nСкористайся кнопкою '🌐 Відкрити C55 Web App'.",
-            reply_markup=get_reply_kb(is_admin, webapp_url=_c55_webapp_url(is_admin=is_admin))
+            reply_markup=get_reply_kb(is_admin, webapp_url=wa, webapp_admin_v045_url=wa045),
         )
 
     @dp.message(Command("refresh"))
@@ -258,9 +248,10 @@ async def main():
             )
             return
         is_admin = await check_is_admin(user.id)
+        wa, wa045 = reply_kb_webapp_urls(is_admin=is_admin)
         await message.answer(
             "✅ Кнопки оновлено.",
-            reply_markup=get_reply_kb(is_admin, webapp_url=_c55_webapp_url(is_admin=is_admin)),
+            reply_markup=get_reply_kb(is_admin, webapp_url=wa, webapp_admin_v045_url=wa045),
         )
 
     @dp.message(Command("admin"))

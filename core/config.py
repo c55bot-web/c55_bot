@@ -17,6 +17,8 @@ SCHEDULE_THREAD_ID = int(_sch_thread_id_str) if _sch_thread_id_str.isdigit() els
 ZV_DORM_WEBAPP_URL = os.getenv("ZV_DORM_WEBAPP_URL", "").strip()
 # Єдиний URL C55 Web App (якщо не задано — використовуємо ZV_DORM_WEBAPP_URL)
 C55_WEBAPP_URL = os.getenv("C55_WEBAPP_URL", ZV_DORM_WEBAPP_URL).strip()
+# Опційно: повний URL старої збірки адмін-панелі (v0.45). Якщо порожньо — шлях /v0.45/ вставляється перед /webapp/ чи /docs/.
+C55_WEBAPP_URL_V045 = os.getenv("C55_WEBAPP_URL_V045", "").strip()
 
 # Публічний HTTPS endpoint для Mini App API (не github.io). Потрібен, щоб WebApp міг робити fetch без tg.sendData.
 C55_WEBAPP_API_URL = os.getenv("C55_WEBAPP_API_URL", "").strip().rstrip("/")

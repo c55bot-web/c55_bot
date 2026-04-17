@@ -1,7 +1,6 @@
 from aiogram import Router, F, Bot
 import json
 from datetime import datetime, timedelta
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from aiogram.types import (
     Message,
@@ -16,7 +15,8 @@ from aiogram.filters import Command
 
 from core.states import EditUser, CustomPoll, CustomRequest, CustomRequestReply
 from core.keyboards import get_profile_kb, get_back_btn, get_schedule_kb, get_student_panel_kb
-from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAPP_URL, C55_WEBAPP_API_URL, POLLS_CONFIG, POLL_DISPLAY_NAMES
+from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAPP_URL, POLLS_CONFIG, POLL_DISPLAY_NAMES
+from core.webapp_urls import reply_kb_webapp_urls
 from database.requests import (
     async_session, check_is_admin, add_approval_request, backup_user_to_json, get_schedule_by_day, save_new_poll, get_setting,
     notify_admins_about_request, get_approval_by_id, add_approval_correspondence,
@@ -38,20 +38,6 @@ def is_owner(callback: CallbackQuery) -> bool:
     owner_id = MENU_OWNERS.get(callback.message.message_id)
     return not owner_id or owner_id == callback.from_user.id
 
-
-def _c55_webapp_url(is_admin: bool = False) -> str:
-    """Повертає URL WebApp з cache-busting версією."""
-    if not C55_WEBAPP_URL:
-        return ""
-    parts = urlsplit(C55_WEBAPP_URL)
-    qs = dict(parse_qsl(parts.query, keep_blank_values=True))
-    # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417t"
-    qs["is_admin"] = "1" if is_admin else "0"
-    if C55_WEBAPP_API_URL:
-        qs["api"] = C55_WEBAPP_API_URL
-    new_query = urlencode(qs)
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
 
 # Приклади для полів профілю (відображаються при зміні)
 EDIT_PROMPTS = {
@@ -86,13 +72,15 @@ async def student_panel_cmd(message: Message, state: FSMContext):
         )
         MENU_OWNERS[msg.message_id] = message.from_user.id
         return
+    wa, wa045 = reply_kb_webapp_urls(is_admin=is_admin)
+    web_rows = [[KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=wa))]]
+    if wa045:
+        web_rows.append([KeyboardButton(text="⚙️ Адмін C55 (v0.45)", web_app=WebAppInfo(url=wa045))])
     await message.answer(
         "🌐 <b>C55 Web App</b>\nНатисніть кнопку <b>під полем вводу</b>, щоб відкрити єдину панель (курсант/адмін).",
         parse_mode="HTML",
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=_c55_webapp_url(is_admin=is_admin)))],
-            ],
+            keyboard=web_rows,
             resize_keyboard=True,
             one_time_keyboard=True,
         ),
@@ -109,12 +97,14 @@ async def student_panel_inline(callback: CallbackQuery, state: FSMContext):
             reply_markup=get_back_btn("close_panel"),
             parse_mode="HTML",
         )
+        wa, wa045 = reply_kb_webapp_urls(is_admin=is_admin)
+        web_rows = [[KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=wa))]]
+        if wa045:
+            web_rows.append([KeyboardButton(text="⚙️ Адмін C55 (v0.45)", web_app=WebAppInfo(url=wa045))])
         await callback.message.answer(
             "⬇️ Кнопка відкриття C55 Web App:",
             reply_markup=ReplyKeyboardMarkup(
-                keyboard=[
-                    [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=_c55_webapp_url(is_admin=is_admin)))],
-                ],
+                keyboard=web_rows,
                 resize_keyboard=True,
                 one_time_keyboard=True,
             ),

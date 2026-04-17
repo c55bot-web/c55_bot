@@ -2,7 +2,6 @@ import logging
 import os
 import re
 import pdfplumber
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from datetime import datetime, timedelta
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
@@ -29,7 +28,8 @@ from core.keyboards import (
     get_approval_action_kb,
     get_schedule_kb
 )
-from core.config import GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG, POLL_DISPLAY_NAMES, MENU_OWNERS, C55_WEBAPP_URL, C55_WEBAPP_API_URL
+from core.config import GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG, POLL_DISPLAY_NAMES, MENU_OWNERS, C55_WEBAPP_URL
+from core.webapp_urls import reply_kb_webapp_urls
 from database.requests import (
     get_setting, toggle_setting, check_is_admin, save_new_poll, 
     get_active_polls, async_session,
@@ -46,18 +46,6 @@ from schedule_system.extractor import get_raw_schedule
 from schedule_system.formatter import parse_lesson
 
 router = Router()
-
-
-def _c55_webapp_url(is_admin: bool = False) -> str:
-    if not C55_WEBAPP_URL:
-        return ""
-    parts = urlsplit(C55_WEBAPP_URL)
-    qs = dict(parse_qsl(parts.query, keep_blank_values=True))
-    qs["v"] = "20260417t"
-    qs["is_admin"] = "1" if is_admin else "0"
-    if C55_WEBAPP_API_URL:
-        qs["api"] = C55_WEBAPP_API_URL
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(qs), parts.fragment))
 
 
 @router.message(Command("discipline"))
@@ -149,13 +137,15 @@ async def admin_panel_cmd(message: Message, state: FSMContext):
     if not await check_is_admin(message.from_user.id): return
     await state.clear()
     if C55_WEBAPP_URL:
+        wa, wa045 = reply_kb_webapp_urls(is_admin=True)
+        web_rows = [[KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=wa))]]
+        if wa045:
+            web_rows.append([KeyboardButton(text="⚙️ Адмін C55 (v0.45)", web_app=WebAppInfo(url=wa045))])
         await message.answer(
             "🌐 <b>C55 Web App</b>\nНатисніть кнопку <b>під полем вводу</b>, щоб відкрити єдину панель.",
             parse_mode="HTML",
             reply_markup=ReplyKeyboardMarkup(
-                keyboard=[
-                    [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=_c55_webapp_url(is_admin=True)))],
-                ],
+                keyboard=web_rows,
                 resize_keyboard=True,
                 one_time_keyboard=True,
             ),
