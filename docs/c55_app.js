@@ -175,7 +175,7 @@ bindClick("schShowBtn", async () => {
   if (!box) return;
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417r`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417s`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -261,7 +261,7 @@ bindClick("adminSchShowBtn", async () => {
   if (!box) return;
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417r`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417s`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";

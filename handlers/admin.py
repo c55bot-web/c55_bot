@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import pdfplumber
-from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from datetime import datetime, timedelta
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
@@ -53,10 +53,10 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
         return ""
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
-    qs["v"] = "20260417r"
+    qs["v"] = "20260417s"
     qs["is_admin"] = "1" if is_admin else "0"
     if C55_WEBAPP_API_URL:
-        qs["api"] = quote(C55_WEBAPP_API_URL, safe="")
+        qs["api"] = C55_WEBAPP_API_URL
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(qs), parts.fragment))
 
 
