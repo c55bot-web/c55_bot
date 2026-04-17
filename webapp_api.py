@@ -20,7 +20,7 @@ from database.requests import check_is_admin, get_closed_polls_history
 
 log = logging.getLogger(__name__)
 
-_ALLOWED_ORIGIN_SUFFIXES = (
+_ALLOWED_ORIGIN_PREFIXES = (
     "https://c55bot-web.github.io",
     "https://web.telegram.org",
     "https://telegram.org",
@@ -30,7 +30,7 @@ _ALLOWED_ORIGIN_SUFFIXES = (
 def _cors_headers(origin: str | None) -> dict[str, str]:
     allow_origin = "*"
     if origin:
-        if origin.startswith(_ALLOWED_ORIGIN_SUFFIXES):
+        if origin.startswith(_ALLOWED_ORIGIN_PREFIXES) or origin.endswith(".trycloudflare.com"):
             allow_origin = origin
     return {
         "Access-Control-Allow-Origin": allow_origin,
