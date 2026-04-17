@@ -12,11 +12,11 @@ import logging
 from typing import Any
 
 from aiohttp import web
-
+from aiogram import Bot
 from aiogram.utils.web_app import safe_parse_webapp_init_data
 
-from core.config import BOT_TOKEN, POLL_DISPLAY_NAMES
-from database.requests import check_is_admin, get_closed_polls_history
+from core.config import BOT_TOKEN
+from handlers.webapp_payload import execute_c55_webapp_payload
 
 log = logging.getLogger(__name__)
 
@@ -55,15 +55,20 @@ def _extract_init_data(request: web.Request, payload: dict[str, Any]) -> str:
     return str(v or "").strip()
 
 
+def _json_headers(origin: str | None) -> dict[str, str]:
+    h = _cors_headers(origin)
+    h["Content-Type"] = "application/json; charset=utf-8"
+    return h
+
+
 async def handle_options(request: web.Request) -> web.Response:
     origin = request.headers.get("Origin")
     return web.Response(status=204, headers=_cors_headers(origin))
 
 
-async def handle_admin_history(request: web.Request) -> web.Response:
+async def handle_c55_action(request: web.Request) -> web.Response:
     origin = request.headers.get("Origin")
-    headers = _cors_headers(origin)
-    headers["Content-Type"] = "application/json; charset=utf-8"
+    headers = _json_headers(origin)
 
     if request.method != "POST":
         return web.json_response({"ok": False, "error": "method_not_allowed"}, status=405, headers=headers)
@@ -82,44 +87,72 @@ async def handle_admin_history(request: web.Request) -> web.Response:
     if not user:
         return web.json_response({"ok": False, "error": "missing_user"}, status=401, headers=headers)
 
-    if not await check_is_admin(user.id):
-        return web.json_response({"ok": False, "error": "forbidden"}, status=403, headers=headers)
+    bot: Bot | None = request.app.get("bot")
+    if bot is None:
+        return web.json_response({"ok": False, "error": "server_misconfigured"}, status=500, headers=headers)
 
-    limit_days = int(payload.get("limit_days", 7) or 7)
-    polls = await get_closed_polls_history(limit_days=limit_days)
-    if not polls:
-        return web.json_response({"ok": True, "text": "ℹ️ Історія порожня (за 7 днів)."}, status=200, headers=headers)
+    kind = str(payload.get("kind", "c55_student_webapp")).strip()
+    action = str(payload.get("action", "")).strip()
+    if kind not in {"c55_student_webapp", "c55_admin_webapp"}:
+        return web.json_response({"ok": False, "error": "bad_kind"}, status=400, headers=headers)
+    if not action:
+        return web.json_response({"ok": False, "error": "missing_action"}, status=400, headers=headers)
 
-    lines = ["📊 <b>Історія закритих опитувань (останні 7 днів)</b>", ""]
-    shown = 0
-    for p in polls:
-        if shown >= 6:
-            break
-        created = p.created_at.strftime("%d.%m %H:%M") if p.created_at else "?"
-        name = POLL_DISPLAY_NAMES.get(p.type, p.type)
-        lines.append(f"<b>{name}</b> ({p.type}) — {created}")
-        if p.report_text:
-            lines.append(p.report_text)
-        else:
-            lines.append("ℹ️ Детальний звіт для цього опитування не збережено.")
-        lines.append("")
-        shown += 1
-    if len(polls) > shown:
-        lines.append(f"… ще {len(polls) - shown} звіт(ів) за 7 днів.")
-
-    text = "\n".join(lines)
-    return web.json_response({"ok": True, "text": text, "parse_mode": "HTML"}, status=200, headers=headers)
+    res = await execute_c55_webapp_payload(bot, user.id, kind, action, payload)
+    out: dict[str, Any] = {"ok": bool(res.get("ok", True))}
+    if "text" in res:
+        out["text"] = res["text"]
+    if "parse_mode" in res:
+        out["parse_mode"] = res["parse_mode"]
+    if "data" in res:
+        out["data"] = res["data"]
+    return web.json_response(out, status=200, headers=headers)
 
 
-def build_app() -> web.Application:
+async def handle_admin_history(request: web.Request) -> web.Response:
+    """Зворотна сумісність: той самий результат, що й action admin_history_recent."""
+    origin = request.headers.get("Origin")
+    headers = _json_headers(origin)
+
+    if request.method != "POST":
+        return web.json_response({"ok": False, "error": "method_not_allowed"}, status=405, headers=headers)
+
+    payload = await _read_json(request)
+    init_data = _extract_init_data(request, payload)
+    if not init_data:
+        return web.json_response({"ok": False, "error": "missing_init_data"}, status=401, headers=headers)
+
+    try:
+        parsed = safe_parse_webapp_init_data(BOT_TOKEN, init_data)
+    except Exception:
+        return web.json_response({"ok": False, "error": "bad_init_data"}, status=401, headers=headers)
+
+    user = parsed.user
+    if not user:
+        return web.json_response({"ok": False, "error": "missing_user"}, status=401, headers=headers)
+
+    bot: Bot | None = request.app.get("bot")
+    if bot is None:
+        return web.json_response({"ok": False, "error": "server_misconfigured"}, status=500, headers=headers)
+
+    merged = {**payload, "kind": "c55_admin_webapp", "action": "admin_history_recent"}
+    res = await execute_c55_webapp_payload(bot, user.id, "c55_admin_webapp", "admin_history_recent", merged)
+    out: dict[str, Any] = {"ok": True, "text": res.get("text", ""), "parse_mode": res.get("parse_mode", "HTML")}
+    return web.json_response(out, status=200, headers=headers)
+
+
+def build_app(bot: Bot) -> web.Application:
     app = web.Application()
-    app.router.add_route("OPTIONS", "/api/c55/admin/history", handle_options)
+    app["bot"] = bot
+    for path in ("/api/c55/action", "/api/c55/admin/history"):
+        app.router.add_route("OPTIONS", path, handle_options)
+    app.router.add_route("POST", "/api/c55/action", handle_c55_action)
     app.router.add_route("POST", "/api/c55/admin/history", handle_admin_history)
     return app
 
 
-async def start_site(host: str, port: int) -> web.AppRunner:
-    runner = web.AppRunner(build_app())
+async def start_site(bot: Bot, host: str, port: int) -> web.AppRunner:
+    runner = web.AppRunner(build_app(bot))
     await runner.setup()
     site = web.TCPSite(runner, host=host, port=port)
     await site.start()

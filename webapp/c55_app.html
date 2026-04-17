@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417t" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417u" />
 </head>
 <body>
   <div class="app">
@@ -33,6 +33,7 @@
         <div class="drawer-title">🎓 Панель курсанта</div>
         <button class="btn alt" id="backToChooserFromStudent">↩️ До вибору панелі</button>
       </div>
+      <div id="studentApiResult" class="schedule-result api-result"></div>
       <div class="menu">
         <button data-panel="pProfile">👤 Мій профіль</button>
         <button data-panel="pProfileEdit">✏️ Запит на зміну профілю</button>
@@ -44,8 +45,8 @@
       </div>
 
       <div class="panel" id="pProfile">
-        <button class="btn alt" id="profileSnapshotBtn">Показати мій профіль у чаті</button>
-        <div class="hint">Бот надішле актуальні дані профілю приватним повідомленням.</div>
+        <button class="btn alt" id="profileSnapshotBtn">Показати мій профіль</button>
+        <div class="hint">Результат з’явиться під заголовком панелі, без закриття Web App.</div>
       </div>
 
       <div class="panel" id="pProfileEdit">
@@ -145,6 +146,7 @@
         <div class="drawer-title">⚙️ Панель адміністратора</div>
         <button class="btn alt" id="backToChooserFromAdmin">↩️ До вибору панелі</button>
       </div>
+      <div id="adminApiResult" class="schedule-result api-result"></div>
       <div class="menu">
         <button data-panel="pAdminApprovals">🔔 Запити</button>
         <button data-panel="pAdminPollCreate">📋 Розрахунки о/с</button>
@@ -195,7 +197,11 @@
             <option value="auto_dorm_fund">Нагадування фонду</option>
           </select>
         </div>
-        <button class="btn warn" id="adminToggleBtn">Перемкнути ON/OFF</button>
+        <div class="row auto-toggle-row">
+          <button class="btn ok" type="button" id="adminAutoOnBtn">Увімкнути</button>
+          <button class="btn warn" type="button" id="adminAutoOffBtn">Вимкнути</button>
+        </div>
+        <div class="hint">Дві кнопки керують обраною авто-функцією; активна відповідає поточному стану.</div>
       </div>
 
       <div class="panel" id="pAdminOps">
@@ -248,6 +254,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417t"></script>
+  <script src="./c55_app.js?v=20260417u"></script>
 </body>
 </html>

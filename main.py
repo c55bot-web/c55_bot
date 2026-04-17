@@ -234,7 +234,7 @@ async def main():
         try:
             from webapp_api import start_site
 
-            webapp_api_runner = await start_site(C55_WEBAPP_API_HOST, C55_WEBAPP_API_PORT)
+            webapp_api_runner = await start_site(bot, C55_WEBAPP_API_HOST, C55_WEBAPP_API_PORT)
         except Exception as e:
             logging.error("Не вдалося запустити C55 WebApp API: %s", e)
 
