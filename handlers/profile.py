@@ -46,7 +46,7 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417n"
+    qs["v"] = "20260417o"
     qs["is_admin"] = "1" if is_admin else "0"
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
@@ -320,11 +320,22 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
             polls = await get_closed_polls_history(limit_days=7)
             if not polls:
                 return await message.answer("ℹ️ Історія порожня (за 7 днів).")
-            lines = ["📊 <b>Останні закриті опитування</b>", ""]
-            for p in polls[:20]:
+            lines = ["📊 <b>Історія закритих опитувань (останні 7 днів)</b>", ""]
+            shown = 0
+            for p in polls:
+                if shown >= 6:
+                    break
                 created = p.created_at.strftime("%d.%m %H:%M") if p.created_at else "?"
                 name = POLL_DISPLAY_NAMES.get(p.type, p.type)
-                lines.append(f"• {name} ({p.type}) - {created}")
+                lines.append(f"<b>{name}</b> ({p.type}) — {created}")
+                if p.report_text:
+                    lines.append(p.report_text)
+                else:
+                    lines.append("ℹ️ Детальний звіт для цього опитування не збережено.")
+                lines.append("")
+                shown += 1
+            if len(polls) > shown:
+                lines.append(f"… ще {len(polls) - shown} звіт(ів) за 7 днів.")
             return await message.answer("\n".join(lines), parse_mode="HTML")
 
         if action == "admin_create_poll":

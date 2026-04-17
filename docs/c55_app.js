@@ -5,6 +5,7 @@ tg.expand();
 const LAST_REASON_KEY = "c55_last_zv_reason";
 const studentDrawerWrap = document.getElementById("studentDrawerWrap");
 const adminDrawerWrap = document.getElementById("adminDrawerWrap");
+const mainWrap = document.getElementById("mainWrap");
 const toast = document.getElementById("toast");
 const params = new URLSearchParams(window.location.search);
 const isAdmin = params.get("is_admin") === "1";
@@ -61,6 +62,16 @@ if (openAdminBtn) openAdminBtn.onclick = () => {
   }
   if (adminDrawerWrap) adminDrawerWrap.classList.add("open");
 };
+const backToChooserFromStudent = document.getElementById("backToChooserFromStudent");
+if (backToChooserFromStudent) backToChooserFromStudent.onclick = () => {
+  if (studentDrawerWrap) studentDrawerWrap.classList.remove("open");
+  if (mainWrap) mainWrap.classList.remove("hidden");
+};
+const backToChooserFromAdmin = document.getElementById("backToChooserFromAdmin");
+if (backToChooserFromAdmin) backToChooserFromAdmin.onclick = () => {
+  if (adminDrawerWrap) adminDrawerWrap.classList.remove("open");
+  if (mainWrap) mainWrap.classList.remove("hidden");
+};
 
 document.getElementById("df").value = toDate(now);
 document.getElementById("tf").value = toTime(now);
@@ -104,7 +115,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417n`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417o`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -177,7 +188,7 @@ document.getElementById("adminSchShowBtn").onclick = async () => {
   const box = document.getElementById("adminScheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417n`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417o`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
