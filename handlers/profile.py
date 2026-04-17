@@ -43,7 +43,7 @@ def _c55_webapp_url(mode: str) -> str:
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     qs["mode"] = mode
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417a"
+    qs["v"] = "20260417b"
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
 

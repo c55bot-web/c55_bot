@@ -26,13 +26,20 @@ document.getElementById("closeDrawer").onclick = () => drawerWrap.classList.remo
 drawerWrap.addEventListener("click", (e) => { if (e.target === drawerWrap) drawerWrap.classList.remove("open"); });
 
 const panels = Array.from(document.querySelectorAll(".panel"));
-const openPanel = (id) => {
-  panels.forEach(p => p.classList.toggle("show", p.id === id));
+const openPanel = (id, sourceButton = null) => {
+  const target = panels.find((p) => p.id === id);
+  if (!target) return;
+  panels.forEach((p) => p.classList.remove("show"));
+  if (sourceButton) {
+    sourceButton.insertAdjacentElement("afterend", target);
+  }
+  target.classList.add("show");
 };
 document.querySelectorAll(".menu button[data-panel]").forEach(btn => {
-  btn.onclick = () => openPanel(btn.dataset.panel);
+  btn.onclick = () => openPanel(btn.dataset.panel, btn);
 });
-openPanel("pProfile");
+const firstMenuBtn = document.querySelector(".menu button[data-panel]");
+openPanel("pProfile", firstMenuBtn);
 
 if (launchMode === "student") {
   drawerWrap.classList.add("open");

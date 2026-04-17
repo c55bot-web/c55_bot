@@ -73,7 +73,7 @@ body {
 }
 .menu button:hover { border-color:#4c3a76; background:#222235; }
 .panel {
-  margin: 0 12px 12px; border: 1px solid var(--border); background: #171726;
+  margin: 0 0 10px; border: 1px solid var(--border); background: #171726;
   border-radius: 14px; padding: 12px; display: none; animation: slideUp .22s ease;
 }
 .panel.show { display: block; }
