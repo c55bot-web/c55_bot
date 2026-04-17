@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417h" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417i" />
 </head>
 <body>
   <div class="app">
@@ -34,16 +34,12 @@
       </div>
       <div class="menu">
         <button data-panel="pProfile">👤 Мій профіль</button>
-        <button data-panel="pRequest">📝 Подати запит</button>
-        <button data-panel="pCustomPoll">🛠 Створити своє голосування</button>
-        <button data-panel="pSchedule">📖 Переглянути розклад</button>
-      </div>
-
-      <div class="panel" id="pRequest">
-        <button class="btn ok" id="zvCityBtn">🏙 Подати себе у З/В у місто</button>
-        <button class="btn ok" id="zvDormOpenBtn">🏠 Подати себе у З/В з гуртожитку</button>
-        <button class="btn alt" id="openProfileEditBtn">✏️ Запит на зміну профілю</button>
-        <button class="btn alt" id="openCustomReqBtn">📝 Свій запит (довільний текст)</button>
+        <button data-panel="pProfileEdit">✏️ Запит на зміну профілю</button>
+        <button data-panel="pZvCity">🏙 Подати З/В у місто</button>
+        <button data-panel="pZvDorm">🏠 Подати З/В з гуртожитку</button>
+        <button data-panel="pSchedule">📅 Розклад (на сайті)</button>
+        <button data-panel="pCustomReq">📝 Свій запит</button>
+        <button data-panel="pCustomPoll">🗳 Власне голосування</button>
       </div>
 
       <div class="panel" id="pProfile">
@@ -207,6 +203,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417h"></script>
+  <script src="./c55_app.js?v=20260417i"></script>
 </body>
 </html>

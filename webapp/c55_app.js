@@ -44,8 +44,8 @@ const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
   return openPanel;
 };
 
-const studentOpenPanel = bindDrawer(studentDrawerWrap, ".menu", "pProfile");
-const adminOpenPanel = bindDrawer(adminDrawerWrap, ".menu", "pAdminApprovals");
+bindDrawer(studentDrawerWrap, ".menu", "pProfile");
+bindDrawer(adminDrawerWrap, ".menu", "pAdminApprovals");
 
 document.getElementById("openStudent").onclick = () => {
   studentDrawerWrap.classList.add("open");
@@ -77,9 +77,6 @@ document.getElementById("lastReasonBtn").onclick = () => {
   if (!r) return tg.showAlert("Немає збереженої причини.");
   document.getElementById("zvReason").value = r;
 };
-document.getElementById("zvDormOpenBtn").onclick = () => studentOpenPanel("pZvDorm");
-document.getElementById("openProfileEditBtn").onclick = () => studentOpenPanel("pProfileEdit");
-document.getElementById("openCustomReqBtn").onclick = () => studentOpenPanel("pCustomReq");
 document.getElementById("zvDormBtn").onclick = () => {
   const date_from = document.getElementById("df").value;
   const time_from = document.getElementById("tf").value;
@@ -103,7 +100,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417h`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417i`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
