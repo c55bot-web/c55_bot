@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417m" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417n" />
 </head>
 <body>
   <div class="app">
@@ -146,7 +146,7 @@
       <div class="menu">
         <button data-panel="pAdminApprovals">🔔 Запити</button>
         <button data-panel="pAdminPollCreate">📋 Розрахунки о/с</button>
-        <button id="adminOpenCustomPoll">🛠 Створити своє голосування</button>
+        <button data-panel="pAdminCustomPoll">🛠 Створити своє голосування</button>
         <button data-panel="pAdminSchedule">📅 Керування розкладом</button>
         <button data-panel="pAdminOps">🛑 Закрити опитування / Покликати всіх</button>
         <button data-panel="pAdminUsers">👥 Курсанти</button>
@@ -155,7 +155,6 @@
       </div>
 
       <div class="panel" id="pAdminApprovals">
-        <button class="btn alt" id="adminOpenLegacyBtn">♻️ Відкрити повну панель 0.45</button>
         <button class="btn alt" id="adminStatsBtn">📊 Огляд і статистика</button>
         <button class="btn alt" id="adminRequestsOverviewBtn">Показати запити по курсантам</button>
         <button class="btn alt" id="adminCityReportBtn">Звіт по З/В у місто</button>
@@ -171,6 +170,7 @@
       </div>
 
       <div class="panel" id="pAdminAutomation">
+        <button class="btn alt" id="adminAutoStatusBtn">Поточний стан авто-опитувань</button>
         <div class="field">
           <label class="label">Авто-функція</label>
           <select id="adminToggleKey">
@@ -200,8 +200,30 @@
       </div>
 
       <div class="panel" id="pAdminSchedule">
-        <button class="btn alt" id="openAdminScheduleBtn">Відкрити екран розкладу</button>
-        <div class="hint">Переходить до блоку розкладу (перегляд на сайті).</div>
+        <div class="row">
+          <div class="field">
+            <label class="label">Тиждень</label>
+            <select id="adminSchWeek">
+              <option value="current">Поточний</option>
+              <option value="next">Наступний</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label">День</label>
+            <select id="adminSchDay">
+              <option>Пн</option><option>Вт</option><option>Ср</option>
+              <option>Чт</option><option>Пт</option><option>Сб</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn warn" id="adminSchShowBtn">Показати розклад</button>
+        <div id="adminScheduleResult" class="schedule-result"></div>
+      </div>
+
+      <div class="panel" id="pAdminCustomPoll">
+        <div class="field"><label class="label">Питання</label><input id="adminPollQ" placeholder="Текст питання" /></div>
+        <div class="field"><label class="label">Варіанти (кожен з нового рядка)</label><textarea id="adminPollOpts" placeholder="Варіант 1&#10;Варіант 2"></textarea></div>
+        <button class="btn" id="adminCustomPollBtn">Створити голосування</button>
       </div>
     </div>
   </div>
@@ -209,6 +231,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417m"></script>
+  <script src="./c55_app.js?v=20260417n"></script>
 </body>
 </html>

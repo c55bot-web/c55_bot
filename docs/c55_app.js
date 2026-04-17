@@ -61,18 +61,6 @@ if (openAdminBtn) openAdminBtn.onclick = () => {
   }
   if (adminDrawerWrap) adminDrawerWrap.classList.add("open");
 };
-const openAdminScheduleBtn = document.getElementById("openAdminScheduleBtn");
-if (openAdminScheduleBtn) openAdminScheduleBtn.onclick = () => {
-  if (adminDrawerWrap) adminDrawerWrap.classList.remove("open");
-  if (studentDrawerWrap) studentDrawerWrap.classList.add("open");
-  studentOpenPanel("pSchedule");
-};
-const adminOpenCustomPollBtn = document.getElementById("adminOpenCustomPoll");
-if (adminOpenCustomPollBtn) adminOpenCustomPollBtn.onclick = () => {
-  if (adminDrawerWrap) adminDrawerWrap.classList.remove("open");
-  if (studentDrawerWrap) studentDrawerWrap.classList.add("open");
-  studentOpenPanel("pCustomPoll");
-};
 
 document.getElementById("df").value = toDate(now);
 document.getElementById("tf").value = toTime(now);
@@ -116,7 +104,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417m`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417n`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -154,7 +142,6 @@ document.getElementById("pollBtn").onclick = () => {
   sendAction("c55_student_webapp", "custom_poll_submit", { question, options });
 };
 
-document.getElementById("adminOpenLegacyBtn").onclick = () => sendAction("c55_admin_webapp", "admin_open_legacy");
 document.getElementById("adminStatsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_stats");
 document.getElementById("adminRequestsOverviewBtn").onclick = () => sendAction("c55_admin_webapp", "admin_requests_overview");
 document.getElementById("adminCityReportBtn").onclick = () => sendAction("c55_admin_webapp", "admin_city_report");
@@ -169,6 +156,45 @@ document.getElementById("adminPollsListBtn").onclick = () => sendAction("c55_adm
 document.getElementById("adminClosePollsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_close_all_polls");
 document.getElementById("adminUsersOverviewBtn").onclick = () => sendAction("c55_admin_webapp", "admin_users_overview");
 document.getElementById("adminHistoryRecentBtn").onclick = () => sendAction("c55_admin_webapp", "admin_history_recent");
+document.getElementById("adminAutoStatusBtn").onclick = () => sendAction("c55_admin_webapp", "admin_auto_status");
 document.querySelectorAll("#pAdminPollCreate [data-poll]").forEach((btn) => {
   btn.onclick = () => sendAction("c55_admin_webapp", "admin_create_poll", { poll_type: btn.dataset.poll });
 });
+document.getElementById("adminCustomPollBtn").onclick = () => {
+  const question = document.getElementById("adminPollQ").value.trim();
+  const options = document.getElementById("adminPollOpts").value
+    .split("\n")
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (!question || options.length < 2 || options.length > 10) {
+    return tg.showAlert("Потрібне питання і 2-10 варіантів.");
+  }
+  sendAction("c55_admin_webapp", "admin_custom_poll_create", { question, options });
+};
+document.getElementById("adminSchShowBtn").onclick = async () => {
+  const week = document.getElementById("adminSchWeek").value;
+  const day = document.getElementById("adminSchDay").value;
+  const box = document.getElementById("adminScheduleResult");
+  box.textContent = "Завантаження...";
+  try {
+    const resp = await fetch(`./schedule_cache.json?v=20260417n`, { cache: "no-store" });
+    if (!resp.ok) throw new Error("cache-miss");
+    const cache = await resp.json();
+    const key = week === "next" ? "next" : "current";
+    const dayRows = (cache?.[key] || {})[day] || [];
+    if (!dayRows.length) {
+      box.textContent = `На ${day} пар немає.`;
+      return;
+    }
+    const header = cache?.meta?.week_labels?.[key] || (key === "next" ? "Наступний тиждень" : "Поточний тиждень");
+    const lines = [`${header}, ${day}`];
+    for (const row of dayRows) {
+      const pair = row.pair_num ?? "?";
+      const text = row.lesson_text || "";
+      lines.push(`${pair} пара: ${text}`);
+    }
+    box.textContent = lines.join("\n");
+  } catch (e) {
+    box.textContent = "Не вдалося завантажити розклад. Спробуйте пізніше.";
+  }
+};
