@@ -93,6 +93,7 @@ textarea { min-height: 90px; resize: vertical; }
 .btn.alt { background:#374151; }
 .btn.ok { background:#166534; }
 .btn.warn { background:#92400e; }
+.panel .btn + .btn { margin-top: 8px; }
 .hint { color:var(--muted); font-size:12px; margin-top: 6px; }
 .schedule-result {
   margin-top: 10px;

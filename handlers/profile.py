@@ -7,7 +7,6 @@ from aiogram.types import (
     CallbackQuery,
     KeyboardButton,
     ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
     WebAppInfo,
 )
 from aiogram.fsm.context import FSMContext
@@ -20,7 +19,9 @@ from core.config import MENU_OWNERS, GROUP_CHAT_ID, MESSAGE_THREAD_ID, C55_WEBAP
 from database.requests import (
     async_session, check_is_admin, add_approval_request, backup_user_to_json, get_schedule_by_day, save_new_poll, get_setting,
     notify_admins_about_request, get_approval_by_id, add_approval_correspondence,
-    get_distance_learning, get_subject_text, check_schedule_has_classrooms, update_user_last_zv_reason
+    get_distance_learning, get_subject_text, check_schedule_has_classrooms, update_user_last_zv_reason,
+    get_pending_approvals_count, get_users_count, get_users_with_requests_by_types,
+    get_approvals_by_type, process_approval, toggle_setting, get_all_settings
 )
 from database.models import User
 from core.zv_helpers import zv_payload
@@ -42,7 +43,7 @@ def _c55_webapp_url() -> str:
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
     # Примусове оновлення кешу Telegram WebView після редизайнів WebApp
-    qs["v"] = "20260417c"
+    qs["v"] = "20260417d"
     new_query = urlencode(qs)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
 
@@ -84,7 +85,6 @@ async def student_panel_cmd(message: Message, state: FSMContext):
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
                 [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=_c55_webapp_url()))],
-                [KeyboardButton(text="❌ Закрити C55 Web клавіатуру")],
             ],
             resize_keyboard=True,
             one_time_keyboard=True,
@@ -106,7 +106,6 @@ async def student_panel_inline(callback: CallbackQuery, state: FSMContext):
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
                     [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=_c55_webapp_url()))],
-                    [KeyboardButton(text="❌ Закрити C55 Web клавіатуру")],
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=True,
@@ -118,19 +117,14 @@ async def student_panel_inline(callback: CallbackQuery, state: FSMContext):
         reply_markup=get_student_panel_kb(), parse_mode="HTML"
     )
 
-
-@router.message(F.text == "❌ Закрити C55 Web клавіатуру")
-async def close_c55_web_keyboard(message: Message):
-    await message.answer("Клавіатуру C55 Web App закрито.", reply_markup=ReplyKeyboardRemove())
-
-
 @router.message(F.web_app_data)
 async def c55_student_webapp_submit(message: Message, bot: Bot):
     try:
         payload = json.loads(message.web_app_data.data or "{}")
     except Exception:
         return
-    if payload.get("kind") != "c55_student_webapp":
+    kind = str(payload.get("kind", "c55_student_webapp")).strip()
+    if kind not in {"c55_student_webapp", "c55_admin_webapp"}:
         return
 
     action = str(payload.get("action", "")).strip()
@@ -139,6 +133,79 @@ async def c55_student_webapp_submit(message: Message, bot: Bot):
         if not user:
             return await message.answer("❌ Вас немає в базі. Напишіть /start.")
         user_name = user.full_name
+
+    if kind == "c55_admin_webapp":
+        if not await check_is_admin(message.from_user.id):
+            return await message.answer("❌ Адмін-панель доступна лише адміністраторам.")
+
+        if action == "admin_stats":
+            pending = await get_pending_approvals_count()
+            users_total = await get_users_count()
+            dorm_users = await get_users_with_requests_by_types(["zv_dorm", "zv_release"])
+            city_users = await get_users_with_requests_by_types(["zv_city"])
+            other_users = await get_users_with_requests_by_types(["admin_request", "custom_request", "profile_update"])
+            dorm_count = sum(c for _, c in dorm_users)
+            city_count = sum(c for _, c in city_users)
+            other_count = sum(c for _, c in other_users)
+            settings = await get_all_settings()
+            text = (
+                "⚙️ <b>Статистика адмін-панелі</b>\n\n"
+                f"👥 Курсантів у БД: <b>{users_total}</b>\n"
+                f"🔔 Запитів очікує: <b>{pending}</b>\n"
+                f"🏠 З/В з гурту: <b>{dorm_count}</b>\n"
+                f"🏙 З/В у місто: <b>{city_count}</b>\n"
+                f"📝 Інші запити: <b>{other_count}</b>\n\n"
+                f"🤖 Авто-З/В нагадування: <b>{'ON' if settings.get('auto_zv_reminders') else 'OFF'}</b>\n"
+                f"📅 Авто-розклад 20:00: <b>{'ON' if settings.get('auto_morning_schedule') else 'OFF'}</b>"
+            )
+            return await message.answer(text, parse_mode="HTML")
+
+        if action == "admin_confirm_all":
+            category = str(payload.get("category", "")).strip()
+            if category == "zv_city":
+                apps = await get_approvals_by_type("zv_city")
+            elif category == "zv_dorm":
+                apps = await get_approvals_by_type("zv_dorm")
+                apps += await get_approvals_by_type("zv_release")
+            else:
+                return await message.answer("❌ Невідома категорія для підтвердження.")
+
+            done = 0
+            for app in apps:
+                uid = await process_approval(app.id, True)
+                if uid:
+                    done += 1
+                    try:
+                        await bot.send_message(uid, "✅ Ваш запит на З/В погоджено!")
+                    except Exception:
+                        pass
+            return await message.answer(f"✅ Підтверджено запитів: <b>{done}</b>", parse_mode="HTML")
+
+        if action == "admin_toggle_auto":
+            key = str(payload.get("key", "")).strip()
+            allowed = {
+                "auto_rozvid_1",
+                "auto_rozvid_2",
+                "auto_dorm_rent",
+                "auto_dorm_fund",
+                "auto_morning_schedule",
+                "auto_zv_reminders",
+            }
+            if key not in allowed:
+                return await message.answer("❌ Некоректний ключ налаштування.")
+            new_val = await toggle_setting(key)
+            return await message.answer(f"⚙️ {key}: <b>{'ON' if new_val else 'OFF'}</b>", parse_mode="HTML")
+
+        if action == "admin_ping_all":
+            async with async_session() as session:
+                users = (await session.execute(select(User))).scalars().all()
+            text = " ".join([f"@{u.username}" for u in users if u.username])
+            if not text:
+                return await message.answer("⚠️ Немає курсантів з username у базі.")
+            await bot.send_message(chat_id=GROUP_CHAT_ID, message_thread_id=MESSAGE_THREAD_ID, text=text)
+            return await message.answer("🔔 Усіх пропінговано в групі.")
+
+        return await message.answer("ℹ️ Невідома дія адмін-панелі.")
 
     if action == "profile_snapshot":
         async with async_session() as session:

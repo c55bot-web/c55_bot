@@ -3,7 +3,8 @@ tg.ready();
 tg.expand();
 
 const LAST_REASON_KEY = "c55_last_zv_reason";
-const drawerWrap = document.getElementById("studentDrawerWrap");
+const studentDrawerWrap = document.getElementById("studentDrawerWrap");
+const adminDrawerWrap = document.getElementById("adminDrawerWrap");
 const toast = document.getElementById("toast");
 const ADMIN_IDS = new Set([1412535952, 1968855371, 857180040, 1023209296]);
 const userId = tg.initDataUnsafe?.user?.id || 0;
@@ -16,41 +17,45 @@ const showToast = (text) => {
   toast.classList.add("show");
   setTimeout(() => toast.classList.remove("show"), 1800);
 };
-const sendAction = (action, payload = {}) => {
-  const body = { kind: "c55_student_webapp", action, ...payload };
+const sendAction = (kind, action, payload = {}) => {
+  const body = { kind, action, ...payload };
   tg.sendData(JSON.stringify(body));
   if (tg.HapticFeedback?.notificationOccurred) tg.HapticFeedback.notificationOccurred("success");
   showToast("Відправлено");
 };
 
-document.getElementById("openStudent").onclick = () => drawerWrap.classList.add("open");
-document.querySelector(".card.admin").onclick = () => {
+const bindDrawer = (drawerWrap, closeBtnId, menuSelector, defaultPanelId) => {
+  document.getElementById(closeBtnId).onclick = () => drawerWrap.classList.remove("open");
+  drawerWrap.addEventListener("click", (e) => { if (e.target === drawerWrap) drawerWrap.classList.remove("open"); });
+
+  const menuButtons = Array.from(drawerWrap.querySelectorAll(`${menuSelector} button[data-panel]`));
+  const panels = Array.from(drawerWrap.querySelectorAll(".panel"));
+  const openPanel = (id, sourceButton = null) => {
+    const target = panels.find((p) => p.id === id);
+    if (!target) return;
+    panels.forEach((p) => p.classList.remove("show"));
+    if (sourceButton) sourceButton.insertAdjacentElement("afterend", target);
+    target.classList.add("show");
+  };
+  menuButtons.forEach((btn) => {
+    btn.onclick = () => openPanel(btn.dataset.panel, btn);
+  });
+  if (menuButtons.length) {
+    openPanel(defaultPanelId, menuButtons[0]);
+  }
+};
+
+bindDrawer(studentDrawerWrap, "closeDrawer", ".menu", "pProfile");
+bindDrawer(adminDrawerWrap, "closeAdminDrawer", ".menu", "aStats");
+
+document.getElementById("openStudent").onclick = () => studentDrawerWrap.classList.add("open");
+document.getElementById("openAdmin").onclick = () => {
   if (!isAdmin) {
     tg.showAlert("Адмін-панель доступна лише адміністраторам.");
     return;
   }
-  drawerWrap.classList.add("open");
-  showToast("Адмін-режим скоро буде доданий.");
+  adminDrawerWrap.classList.add("open");
 };
-document.getElementById("closeDrawer").onclick = () => drawerWrap.classList.remove("open");
-drawerWrap.addEventListener("click", (e) => { if (e.target === drawerWrap) drawerWrap.classList.remove("open"); });
-
-const panels = Array.from(document.querySelectorAll(".panel"));
-const openPanel = (id, sourceButton = null) => {
-  const target = panels.find((p) => p.id === id);
-  if (!target) return;
-  panels.forEach((p) => p.classList.remove("show"));
-  if (sourceButton) {
-    sourceButton.insertAdjacentElement("afterend", target);
-  }
-  target.classList.add("show");
-};
-document.querySelectorAll(".menu button[data-panel]").forEach(btn => {
-  btn.onclick = () => openPanel(btn.dataset.panel, btn);
-});
-const firstMenuBtn = document.querySelector(".menu button[data-panel]");
-openPanel("pProfile", firstMenuBtn);
-drawerWrap.classList.add("open");
 
 document.getElementById("df").value = toDate(now);
 document.getElementById("tf").value = toTime(now);
@@ -58,14 +63,14 @@ const end = new Date(now.getTime() + 60 * 60 * 1000);
 document.getElementById("dt").value = toDate(end);
 document.getElementById("tt").value = toTime(end);
 
-document.getElementById("profileSnapshotBtn").onclick = () => sendAction("profile_snapshot");
+document.getElementById("profileSnapshotBtn").onclick = () => sendAction("c55_student_webapp", "profile_snapshot");
 document.getElementById("profileUpdateBtn").onclick = () => {
   const field = document.getElementById("pfField").value;
   const value = document.getElementById("pfValue").value.trim();
   if (!value) return tg.showAlert("Введіть нове значення.");
-  sendAction("profile_update_request", { field, value });
+  sendAction("c55_student_webapp", "profile_update_request", { field, value });
 };
-document.getElementById("zvCityBtn").onclick = () => sendAction("zv_city_submit");
+document.getElementById("zvCityBtn").onclick = () => sendAction("c55_student_webapp", "zv_city_submit");
 document.getElementById("lastReasonBtn").onclick = () => {
   const r = localStorage.getItem(LAST_REASON_KEY) || "";
   if (!r) return tg.showAlert("Немає збереженої причини.");
@@ -86,7 +91,7 @@ document.getElementById("zvDormBtn").onclick = () => {
     return tg.showAlert("Введіть адресу вручну.");
   }
   localStorage.setItem(LAST_REASON_KEY, reason);
-  sendAction("zv_dorm_submit", { date_from, time_from, date_to, time_to, address_mode, address, reason });
+  sendAction("c55_student_webapp", "zv_dorm_submit", { date_from, time_from, date_to, time_to, address_mode, address, reason });
 };
 document.getElementById("schShowBtn").onclick = async () => {
   const week = document.getElementById("schWeek").value;
@@ -94,7 +99,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417c`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417d`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -118,7 +123,7 @@ document.getElementById("schShowBtn").onclick = async () => {
 document.getElementById("customReqBtn").onclick = () => {
   const text = document.getElementById("customReqText").value.trim();
   if (!text) return tg.showAlert("Введіть текст запиту.");
-  sendAction("custom_request", { text });
+  sendAction("c55_student_webapp", "custom_request", { text });
 };
 document.getElementById("pollBtn").onclick = () => {
   const question = document.getElementById("pollQ").value.trim();
@@ -129,5 +134,14 @@ document.getElementById("pollBtn").onclick = () => {
   if (!question || options.length < 2 || options.length > 10) {
     return tg.showAlert("Потрібне питання і 2-10 варіантів.");
   }
-  sendAction("custom_poll_submit", { question, options });
+  sendAction("c55_student_webapp", "custom_poll_submit", { question, options });
 };
+
+document.getElementById("adminStatsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_stats");
+document.getElementById("approveAllCityBtn").onclick = () => sendAction("c55_admin_webapp", "admin_confirm_all", { category: "zv_city" });
+document.getElementById("approveAllDormBtn").onclick = () => sendAction("c55_admin_webapp", "admin_confirm_all", { category: "zv_dorm" });
+document.getElementById("adminToggleBtn").onclick = () => {
+  const key = document.getElementById("adminToggleKey").value;
+  sendAction("c55_admin_webapp", "admin_toggle_auto", { key });
+};
+document.getElementById("adminPingBtn").onclick = () => sendAction("c55_admin_webapp", "admin_ping_all");

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417c" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417d" />
 </head>
 <body>
   <div class="app">
@@ -21,9 +21,9 @@
         <h3>🎓 Панель курсанта</h3>
         <p>Профіль, запити, Зв, розклад, власне голосування.</p>
       </div>
-      <div class="card admin">
+      <div class="card admin" id="openAdmin">
         <h3>⚙️ Панель адміністратора</h3>
-        <p>Буде підключено наступним кроком.</p>
+        <p>Швидке керування заявками, автофункціями та пінгом курсантів.</p>
       </div>
     </div>
   </div>
@@ -140,9 +140,55 @@
     </div>
   </div>
 
+  <div class="drawer-wrap" id="adminDrawerWrap">
+    <div class="drawer">
+      <div class="drawer-head">
+        <div class="drawer-title">⚙️ Панель адміністратора</div>
+        <button class="icon-btn" id="closeAdminDrawer">Закрити</button>
+      </div>
+      <div class="menu">
+        <button data-panel="aStats">📊 Огляд і статистика</button>
+        <button data-panel="aApprovals">✅ Масове погодження</button>
+        <button data-panel="aAutomation">🤖 Автофункції</button>
+        <button data-panel="aBroadcast">📣 Сповіщення</button>
+      </div>
+
+      <div class="panel" id="aStats">
+        <button class="btn alt" id="adminStatsBtn">Оновити статистику в чаті</button>
+        <div class="hint">Бот надішле поточний стан заявок і системних перемикачів.</div>
+      </div>
+
+      <div class="panel" id="aApprovals">
+        <button class="btn ok" id="approveAllCityBtn">Погодити всі З/В у місто</button>
+        <button class="btn ok" id="approveAllDormBtn">Погодити всі З/В з гуртожитку</button>
+        <div class="hint">Працює тільки для адмінів, перевіряється на бекенді.</div>
+      </div>
+
+      <div class="panel" id="aAutomation">
+        <div class="field">
+          <label class="label">Авто-функція</label>
+          <select id="adminToggleKey">
+            <option value="auto_zv_reminders">Нагадування про З/В</option>
+            <option value="auto_morning_schedule">Авто-розклад 20:00</option>
+            <option value="auto_rozvid_1">Розвід 06:00</option>
+            <option value="auto_rozvid_2">Розвід 06:50</option>
+            <option value="auto_dorm_rent">Нагадування оплати гуртожитку</option>
+            <option value="auto_dorm_fund">Нагадування фонду</option>
+          </select>
+        </div>
+        <button class="btn warn" id="adminToggleBtn">Перемкнути ON/OFF</button>
+      </div>
+
+      <div class="panel" id="aBroadcast">
+        <button class="btn" id="adminPingBtn">Пінгнути всіх (@username)</button>
+        <div class="hint">Надішле згадку всіх курсантів у службову гілку.</div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417c"></script>
+  <script src="./c55_app.js?v=20260417d"></script>
 </body>
 </html>
