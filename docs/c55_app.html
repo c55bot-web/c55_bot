@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>C55 Web App</title>
-  <link rel="stylesheet" href="./c55_app.css?v=20260417d" />
+  <link rel="stylesheet" href="./c55_app.css?v=20260417e" />
 </head>
 <body>
   <div class="app">
@@ -17,13 +17,9 @@
     </div>
 
     <div class="grid">
-      <div class="card" id="openStudent">
-        <h3>🎓 Панель курсанта</h3>
-        <p>Профіль, запити, Зв, розклад, власне голосування.</p>
-      </div>
-      <div class="card admin" id="openAdmin">
-        <h3>⚙️ Панель адміністратора</h3>
-        <p>Швидке керування заявками, автофункціями та пінгом курсантів.</p>
+      <div class="card" id="openHub">
+        <h3>🌐 Відкрити C55 панель</h3>
+        <p>Єдиний вхід: курсант + адмін. Адмін-дії захищені на бекенді.</p>
       </div>
     </div>
   </div>
@@ -32,7 +28,6 @@
     <div class="drawer">
       <div class="drawer-head">
         <div class="drawer-title">🎓 Панель курсанта</div>
-        <button class="icon-btn" id="closeDrawer">Закрити</button>
       </div>
       <div class="menu">
         <button data-panel="pProfile">👤 Мій профіль</button>
@@ -144,7 +139,6 @@
     <div class="drawer">
       <div class="drawer-head">
         <div class="drawer-title">⚙️ Панель адміністратора</div>
-        <button class="icon-btn" id="closeAdminDrawer">Закрити</button>
       </div>
       <div class="menu">
         <button data-panel="aStats">📊 Огляд і статистика</button>
@@ -189,6 +183,6 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./c55_app.js?v=20260417d"></script>
+  <script src="./c55_app.js?v=20260417e"></script>
 </body>
 </html>

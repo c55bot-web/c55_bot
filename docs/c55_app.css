@@ -25,7 +25,7 @@ body {
 .title { font-size: 22px; font-weight: 800; letter-spacing: 0.2px; }
 .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
 .pill { font-size: 12px; background: #2a2a3a; color: #d7d7ea; border: 1px solid var(--border); border-radius: 999px; padding: 6px 10px; }
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .card {
   background: linear-gradient(180deg, var(--card), var(--card-2));
   border: 1px solid var(--border);

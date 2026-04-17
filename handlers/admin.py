@@ -2,9 +2,10 @@ import logging
 import os
 import re
 import pdfplumber
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from datetime import datetime, timedelta
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram.types import Message, CallbackQuery, FSInputFile, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
@@ -28,7 +29,7 @@ from core.keyboards import (
     get_approval_action_kb,
     get_schedule_kb
 )
-from core.config import GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG, POLL_DISPLAY_NAMES, MENU_OWNERS
+from core.config import GROUP_CHAT_ID, MESSAGE_THREAD_ID, SCHEDULE_THREAD_ID, POLLS_CONFIG, POLL_DISPLAY_NAMES, MENU_OWNERS, C55_WEBAPP_URL
 from database.requests import (
     get_setting, toggle_setting, check_is_admin, save_new_poll, 
     get_active_polls, async_session,
@@ -45,6 +46,16 @@ from schedule_system.extractor import get_raw_schedule
 from schedule_system.formatter import parse_lesson
 
 router = Router()
+
+
+def _c55_webapp_url(is_admin: bool = False) -> str:
+    if not C55_WEBAPP_URL:
+        return ""
+    parts = urlsplit(C55_WEBAPP_URL)
+    qs = dict(parse_qsl(parts.query, keep_blank_values=True))
+    qs["v"] = "20260417e"
+    qs["is_admin"] = "1" if is_admin else "0"
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(qs), parts.fragment))
 
 
 @router.message(Command("discipline"))
@@ -135,6 +146,19 @@ def is_owner(callback: CallbackQuery) -> bool:
 async def admin_panel_cmd(message: Message, state: FSMContext):
     if not await check_is_admin(message.from_user.id): return
     await state.clear()
+    if C55_WEBAPP_URL:
+        await message.answer(
+            "🌐 <b>C55 Web App</b>\nНатисніть кнопку <b>під полем вводу</b>, щоб відкрити єдину панель.",
+            parse_mode="HTML",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [KeyboardButton(text="🌐 Відкрити C55 Web App", web_app=WebAppInfo(url=_c55_webapp_url(is_admin=True)))],
+                ],
+                resize_keyboard=True,
+                one_time_keyboard=True,
+            ),
+        )
+        return
     try:
         await message.delete()
     except Exception:

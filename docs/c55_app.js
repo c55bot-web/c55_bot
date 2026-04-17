@@ -6,9 +6,8 @@ const LAST_REASON_KEY = "c55_last_zv_reason";
 const studentDrawerWrap = document.getElementById("studentDrawerWrap");
 const adminDrawerWrap = document.getElementById("adminDrawerWrap");
 const toast = document.getElementById("toast");
-const ADMIN_IDS = new Set([1412535952, 1968855371, 857180040, 1023209296]);
-const userId = tg.initDataUnsafe?.user?.id || 0;
-const isAdmin = ADMIN_IDS.has(Number(userId));
+const params = new URLSearchParams(window.location.search);
+const isAdmin = params.get("is_admin") === "1";
 const now = new Date();
 const toDate = (d) => d.toISOString().slice(0, 10);
 const toTime = (d) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -24,8 +23,7 @@ const sendAction = (kind, action, payload = {}) => {
   showToast("Відправлено");
 };
 
-const bindDrawer = (drawerWrap, closeBtnId, menuSelector, defaultPanelId) => {
-  document.getElementById(closeBtnId).onclick = () => drawerWrap.classList.remove("open");
+const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
   drawerWrap.addEventListener("click", (e) => { if (e.target === drawerWrap) drawerWrap.classList.remove("open"); });
 
   const menuButtons = Array.from(drawerWrap.querySelectorAll(`${menuSelector} button[data-panel]`));
@@ -45,16 +43,14 @@ const bindDrawer = (drawerWrap, closeBtnId, menuSelector, defaultPanelId) => {
   }
 };
 
-bindDrawer(studentDrawerWrap, "closeDrawer", ".menu", "pProfile");
-bindDrawer(adminDrawerWrap, "closeAdminDrawer", ".menu", "aStats");
+bindDrawer(studentDrawerWrap, ".menu", "pProfile");
+bindDrawer(adminDrawerWrap, ".menu", "aStats");
 
-document.getElementById("openStudent").onclick = () => studentDrawerWrap.classList.add("open");
-document.getElementById("openAdmin").onclick = () => {
-  if (!isAdmin) {
-    tg.showAlert("Адмін-панель доступна лише адміністраторам.");
-    return;
+document.getElementById("openHub").onclick = () => {
+  studentDrawerWrap.classList.add("open");
+  if (isAdmin) {
+    adminDrawerWrap.classList.add("open");
   }
-  adminDrawerWrap.classList.add("open");
 };
 
 document.getElementById("df").value = toDate(now);
@@ -99,7 +95,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417d`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417e`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
