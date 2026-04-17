@@ -5,13 +5,17 @@ tg.expand();
 const LAST_REASON_KEY = "c55_last_zv_reason";
 const studentDrawerWrap = document.getElementById("studentDrawerWrap");
 const adminDrawerWrap = document.getElementById("adminDrawerWrap");
-const mainWrap = document.getElementById("mainWrap");
+const mainWrap = document.querySelector(".app");
 const toast = document.getElementById("toast");
 const params = new URLSearchParams(window.location.search);
 const isAdmin = params.get("is_admin") === "1";
 const now = new Date();
 const toDate = (d) => d.toISOString().slice(0, 10);
 const toTime = (d) => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+const bindClick = (id, handler) => {
+  const el = document.getElementById(id);
+  if (el) el.onclick = handler;
+};
 const showToast = (text) => {
   if (!toast) return;
   toast.textContent = text;
@@ -73,26 +77,30 @@ if (backToChooserFromAdmin) backToChooserFromAdmin.onclick = () => {
   if (mainWrap) mainWrap.classList.remove("hidden");
 };
 
-document.getElementById("df").value = toDate(now);
-document.getElementById("tf").value = toTime(now);
+const df = document.getElementById("df");
+const tf = document.getElementById("tf");
+const dt = document.getElementById("dt");
+const tt = document.getElementById("tt");
+if (df) df.value = toDate(now);
+if (tf) tf.value = toTime(now);
 const end = new Date(now.getTime() + 60 * 60 * 1000);
-document.getElementById("dt").value = toDate(end);
-document.getElementById("tt").value = toTime(end);
+if (dt) dt.value = toDate(end);
+if (tt) tt.value = toTime(end);
 
-document.getElementById("profileSnapshotBtn").onclick = () => sendAction("c55_student_webapp", "profile_snapshot");
-document.getElementById("profileUpdateBtn").onclick = () => {
+bindClick("profileSnapshotBtn", () => sendAction("c55_student_webapp", "profile_snapshot"));
+bindClick("profileUpdateBtn", () => {
   const field = document.getElementById("pfField").value;
   const value = document.getElementById("pfValue").value.trim();
   if (!value) return tg.showAlert("Введіть нове значення.");
   sendAction("c55_student_webapp", "profile_update_request", { field, value });
-};
-document.getElementById("zvCityBtn").onclick = () => sendAction("c55_student_webapp", "zv_city_submit");
-document.getElementById("lastReasonBtn").onclick = () => {
+});
+bindClick("zvCityBtn", () => sendAction("c55_student_webapp", "zv_city_submit"));
+bindClick("lastReasonBtn", () => {
   const r = localStorage.getItem(LAST_REASON_KEY) || "";
   if (!r) return tg.showAlert("Немає збереженої причини.");
   document.getElementById("zvReason").value = r;
-};
-document.getElementById("zvDormBtn").onclick = () => {
+});
+bindClick("zvDormBtn", () => {
   const date_from = document.getElementById("df").value;
   const time_from = document.getElementById("tf").value;
   const date_to = document.getElementById("dt").value;
@@ -108,14 +116,15 @@ document.getElementById("zvDormBtn").onclick = () => {
   }
   localStorage.setItem(LAST_REASON_KEY, reason);
   sendAction("c55_student_webapp", "zv_dorm_submit", { date_from, time_from, date_to, time_to, address_mode, address, reason });
-};
-document.getElementById("schShowBtn").onclick = async () => {
+});
+bindClick("schShowBtn", async () => {
   const week = document.getElementById("schWeek").value;
   const day = document.getElementById("schDay").value;
   const box = document.getElementById("scheduleResult");
+  if (!box) return;
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417p`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417q`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -135,13 +144,13 @@ document.getElementById("schShowBtn").onclick = async () => {
   } catch (e) {
     box.textContent = "Не вдалося завантажити розклад. Спробуйте пізніше.";
   }
-};
-document.getElementById("customReqBtn").onclick = () => {
+});
+bindClick("customReqBtn", () => {
   const text = document.getElementById("customReqText").value.trim();
   if (!text) return tg.showAlert("Введіть текст запиту.");
   sendAction("c55_student_webapp", "custom_request", { text });
-};
-document.getElementById("pollBtn").onclick = () => {
+});
+bindClick("pollBtn", () => {
   const question = document.getElementById("pollQ").value.trim();
   const options = document.getElementById("pollOpts").value
     .split("\n")
@@ -151,37 +160,37 @@ document.getElementById("pollBtn").onclick = () => {
     return tg.showAlert("Потрібне питання і 2-10 варіантів.");
   }
   sendAction("c55_student_webapp", "custom_poll_submit", { question, options });
-};
+});
 
-document.getElementById("adminStatsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_stats");
-document.getElementById("adminRequestsOverviewBtn").onclick = () => sendAction("c55_admin_webapp", "admin_requests_overview");
-document.getElementById("adminPendingCityBtn").onclick = () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "zv_city" });
-document.getElementById("adminPendingDormBtn").onclick = () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "zv_dorm" });
-document.getElementById("adminPendingOtherBtn").onclick = () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "other" });
-document.getElementById("adminCityReportBtn").onclick = () => sendAction("c55_admin_webapp", "admin_city_report");
-document.getElementById("approveAllCityBtn").onclick = () => sendAction("c55_admin_webapp", "admin_confirm_all", { category: "zv_city" });
-document.getElementById("approveAllDormBtn").onclick = () => sendAction("c55_admin_webapp", "admin_confirm_all", { category: "zv_dorm" });
-document.getElementById("adminApprovalApplyBtn").onclick = () => {
+bindClick("adminStatsBtn", () => sendAction("c55_admin_webapp", "admin_stats"));
+bindClick("adminRequestsOverviewBtn", () => sendAction("c55_admin_webapp", "admin_requests_overview"));
+bindClick("adminPendingCityBtn", () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "zv_city" }));
+bindClick("adminPendingDormBtn", () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "zv_dorm" }));
+bindClick("adminPendingOtherBtn", () => sendAction("c55_admin_webapp", "admin_pending_list", { category: "other" }));
+bindClick("adminCityReportBtn", () => sendAction("c55_admin_webapp", "admin_city_report"));
+bindClick("approveAllCityBtn", () => sendAction("c55_admin_webapp", "admin_confirm_all", { category: "zv_city" }));
+bindClick("approveAllDormBtn", () => sendAction("c55_admin_webapp", "admin_confirm_all", { category: "zv_dorm" }));
+bindClick("adminApprovalApplyBtn", () => {
   const id = Number(document.getElementById("adminApprovalId").value.trim());
   const decision = document.getElementById("adminApprovalDecision").value;
   if (!Number.isInteger(id) || id <= 0) return tg.showAlert("Вкажіть коректний ID запиту.");
   sendAction("c55_admin_webapp", "admin_approval_apply", { approval_id: id, decision });
-};
-document.getElementById("adminToggleBtn").onclick = () => {
+});
+bindClick("adminToggleBtn", () => {
   const key = document.getElementById("adminToggleKey").value;
   sendAction("c55_admin_webapp", "admin_toggle_auto", { key });
-};
-document.getElementById("adminPingBtn").onclick = () => sendAction("c55_admin_webapp", "admin_ping_all");
-document.getElementById("adminPollsListBtn").onclick = () => sendAction("c55_admin_webapp", "admin_polls_list");
-document.getElementById("adminClosePollsBtn").onclick = () => sendAction("c55_admin_webapp", "admin_close_all_polls");
-document.getElementById("adminUsersOverviewBtn").onclick = () => sendAction("c55_admin_webapp", "admin_users_overview");
-document.getElementById("adminUsersListBtn").onclick = () => sendAction("c55_admin_webapp", "admin_users_list");
-document.getElementById("adminHistoryRecentBtn").onclick = () => sendAction("c55_admin_webapp", "admin_history_recent");
-document.getElementById("adminAutoStatusBtn").onclick = () => sendAction("c55_admin_webapp", "admin_auto_status");
+});
+bindClick("adminPingBtn", () => sendAction("c55_admin_webapp", "admin_ping_all"));
+bindClick("adminPollsListBtn", () => sendAction("c55_admin_webapp", "admin_polls_list"));
+bindClick("adminClosePollsBtn", () => sendAction("c55_admin_webapp", "admin_close_all_polls"));
+bindClick("adminUsersOverviewBtn", () => sendAction("c55_admin_webapp", "admin_users_overview"));
+bindClick("adminUsersListBtn", () => sendAction("c55_admin_webapp", "admin_users_list"));
+bindClick("adminHistoryRecentBtn", () => sendAction("c55_admin_webapp", "admin_history_recent"));
+bindClick("adminAutoStatusBtn", () => sendAction("c55_admin_webapp", "admin_auto_status"));
 document.querySelectorAll("#pAdminPollCreate [data-poll]").forEach((btn) => {
   btn.onclick = () => sendAction("c55_admin_webapp", "admin_create_poll", { poll_type: btn.dataset.poll });
 });
-document.getElementById("adminCustomPollBtn").onclick = () => {
+bindClick("adminCustomPollBtn", () => {
   const question = document.getElementById("adminPollQ").value.trim();
   const options = document.getElementById("adminPollOpts").value
     .split("\n")
@@ -191,14 +200,15 @@ document.getElementById("adminCustomPollBtn").onclick = () => {
     return tg.showAlert("Потрібне питання і 2-10 варіантів.");
   }
   sendAction("c55_admin_webapp", "admin_custom_poll_create", { question, options });
-};
-document.getElementById("adminSchShowBtn").onclick = async () => {
+});
+bindClick("adminSchShowBtn", async () => {
   const week = document.getElementById("adminSchWeek").value;
   const day = document.getElementById("adminSchDay").value;
   const box = document.getElementById("adminScheduleResult");
+  if (!box) return;
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417p`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417q`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
@@ -218,12 +228,12 @@ document.getElementById("adminSchShowBtn").onclick = async () => {
   } catch (e) {
     box.textContent = "Не вдалося завантажити розклад. Спробуйте пізніше.";
   }
-};
-document.getElementById("adminSchReportBtn").onclick = () => {
+});
+bindClick("adminSchReportBtn", () => {
   const week = document.getElementById("adminSchWeek").value;
   sendAction("c55_admin_webapp", "admin_schedule_report", { week });
-};
-document.getElementById("adminSchClearBtn").onclick = () => {
+});
+bindClick("adminSchClearBtn", () => {
   const week = document.getElementById("adminSchWeek").value;
   sendAction("c55_admin_webapp", "admin_schedule_clear", { week });
-};
+});
