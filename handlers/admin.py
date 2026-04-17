@@ -53,7 +53,7 @@ def _c55_webapp_url(is_admin: bool = False) -> str:
         return ""
     parts = urlsplit(C55_WEBAPP_URL)
     qs = dict(parse_qsl(parts.query, keep_blank_values=True))
-    qs["v"] = "20260417j"
+    qs["v"] = "20260417k"
     qs["is_admin"] = "1" if is_admin else "0"
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(qs), parts.fragment))
 

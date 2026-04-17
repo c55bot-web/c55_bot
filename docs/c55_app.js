@@ -46,7 +46,7 @@ const bindDrawer = (drawerWrap, menuSelector, defaultPanelId) => {
   return openPanel;
 };
 
-bindDrawer(studentDrawerWrap, ".menu", "pProfile");
+const studentOpenPanel = bindDrawer(studentDrawerWrap, ".menu", "pProfile");
 bindDrawer(adminDrawerWrap, ".menu", "pAdminApprovals");
 
 const openStudentBtn = document.getElementById("openStudent");
@@ -60,6 +60,12 @@ if (openAdminBtn) openAdminBtn.onclick = () => {
     return;
   }
   if (adminDrawerWrap) adminDrawerWrap.classList.add("open");
+};
+const openAdminScheduleBtn = document.getElementById("openAdminScheduleBtn");
+if (openAdminScheduleBtn) openAdminScheduleBtn.onclick = () => {
+  if (adminDrawerWrap) adminDrawerWrap.classList.remove("open");
+  if (studentDrawerWrap) studentDrawerWrap.classList.add("open");
+  studentOpenPanel("pSchedule");
 };
 
 document.getElementById("df").value = toDate(now);
@@ -104,7 +110,7 @@ document.getElementById("schShowBtn").onclick = async () => {
   const box = document.getElementById("scheduleResult");
   box.textContent = "Завантаження...";
   try {
-    const resp = await fetch(`./schedule_cache.json?v=20260417j`, { cache: "no-store" });
+    const resp = await fetch(`./schedule_cache.json?v=20260417k`, { cache: "no-store" });
     if (!resp.ok) throw new Error("cache-miss");
     const cache = await resp.json();
     const key = week === "next" ? "next" : "current";
